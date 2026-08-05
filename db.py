@@ -308,7 +308,7 @@ def ensure_staff_user(full_name, email, password, role):
 
 
 def _seed_or_refresh_week(week_id: int, lesson: dict, teacher_id: int, now: str):
-    """Write full lesson notes + assessment for one week."""
+    """Write full lesson notes + assessment for one week (upgrades to latest MARKER)."""
     from lessons import MARKER
 
     note = query_one(
@@ -319,15 +319,14 @@ def _seed_or_refresh_week(week_id: int, lesson: dict, teacher_id: int, now: str)
     content = lesson["content"]
     examples = lesson["examples"]
 
-    has_v2 = bool(note and MARKER in (note["content"] or ""))
+    is_current = bool(note and MARKER in (note["content"] or ""))
     if note:
-        if not has_v2:
+        if not is_current:
             execute(
                 """UPDATE notes SET title=?, content=?, examples=?, teacher_id=?, updated_at=?
                    WHERE id=?""",
                 (title, content, examples, teacher_id, now, note["id"]),
             )
-        # if already V2 keep teacher edits
     else:
         execute(
             """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
@@ -338,10 +337,9 @@ def _seed_or_refresh_week(week_id: int, lesson: dict, teacher_id: int, now: str)
     qcount = query_one(
         "SELECT COUNT(*) AS c FROM questions WHERE week_id = ?", (week_id,)
     )["c"]
-    # Reseed questions unless teacher already expanded beyond full pack (rare)
-    if qcount == 0 or not has_v2:
+    # Refresh bank when upgrading curriculum or empty
+    if qcount == 0 or not is_current:
         if qcount:
-            # Only clear system questions when upgrading curriculum pack
             execute("DELETE FROM questions WHERE week_id = ?", (week_id,))
         for qtype, prompt, options, correct, points, order in lesson["questions"]:
             execute(
