@@ -16,7 +16,7 @@
     <p class="hero-full__brand">CloudCity Academy</p>
     <h1>Train for the skill you need next.</h1>
     <p class="hero-full__lead">
-      Office, Graphic Design (AI), and Video Editing (AI) finish in one month. Longer tracks run three to six months — weekly lessons, practice, and a certificate when you complete every week.
+      Office, Graphic Design (AI), and Video Editing (AI) finish in one month. Longer tracks run three to six months — weekly lessons and practice, with one certificate when you finish the full course.
     </p>
     <div class="hero-actions">
       {% if current_user and current_user.role == 'student' %}
@@ -87,7 +87,7 @@
     ></div>
     <div class="story__text">
       <h2>What each week looks like</h2>
-      <p>Study the notes. Try the examples. Submit your weekly assessment — short answers, quizzes, and a screenshot of your work. Complete every week to unlock your end-of-course certificate.</p>
+      <p>Study the notes. Try the examples. Submit your weekly assessment — short answers, quizzes, and a screenshot of your work. There is no weekly certificate. Finish the whole course to become eligible for your single end-of-course certificate (issued by admin).</p>
       <a class="btn" href="{{ url_for('login') }}">Sign in with Student ID</a>
     </div>
   </div>

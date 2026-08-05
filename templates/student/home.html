@@ -17,11 +17,11 @@
     <p>Hello {{ current_user.full_name.split()[0] }}{% if current_user.student_code %} · ID {{ current_user.student_code }}{% endif %}. Work week by week — notes, then your assessment.</p>
   </div>
   {% if course.certificate_issued_at %}
-    <a class="btn" href="{{ url_for('student_certificate') }}">Download certificate</a>
+    <a class="btn" href="{{ url_for('student_certificate') }}">Download course certificate</a>
   {% elif complete %}
-    <span class="badge cert">Eligible for certificate</span>
+    <span class="badge cert">Course complete — await end-of-course certificate</span>
   {% else %}
-    <span class="badge pending">{{ done_ids|length }}/{{ weeks|length }} weeks done</span>
+    <span class="badge pending">{{ done_ids|length }}/{{ weeks|length }} weeks done · no weekly certificates</span>
   {% endif %}
 </div>
 
