@@ -24,13 +24,19 @@
       You cannot self-enrol by clicking a card alone.
     </p>
     {% if is_mine %}
-      <a class="btn" href="{{ url_for('student_home') }}">Open my lessons</a>
+      <div class="cta-row">
+        <a class="btn" href="{{ url_for('student_home') }}">Open my lessons</a>
+      </div>
     {% elif current_user and current_user.role == 'student' %}
       <p class="muted">Your Student ID is assigned to <strong>{{ my_course.title if my_course else 'another course' }}</strong>.</p>
-      <a class="btn btn-ghost" href="{{ url_for('student_home') }}">Back to my course</a>
+      <div class="cta-row">
+        <a class="btn btn-ghost" href="{{ url_for('student_home') }}">Back to my course</a>
+      </div>
     {% else %}
-      <a class="btn" href="{{ url_for('register') }}">Apply for this course</a>
-      <a class="btn btn-ghost" href="{{ url_for('login') }}" style="margin-left:0.5rem">I have a Student ID</a>
+      <div class="cta-row">
+        <a class="btn" href="{{ url_for('register') }}">Apply for this course</a>
+        <a class="btn btn-ghost" href="{{ url_for('login') }}">I have a Student ID</a>
+      </div>
     {% endif %}
   </div>
 </section>

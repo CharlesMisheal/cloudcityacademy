@@ -500,9 +500,28 @@ a.path-card:focus-visible {
   background-color: #dfe6ea;
 }
 
+.course-detail__body .cta-row,
+.cta-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.cta-row .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .course-detail {
     grid-template-columns: 1fr;
+  }
+
+  .cta-row {
+    flex-wrap: wrap;
   }
 }
 
