@@ -2308,7 +2308,7 @@ Template for every system you study:
             f"Write input → process → output for a tiny example of “{t}”. List two failure modes and one metric "
             "you would use to judge quality. Bring questions to class.",
             f"Lab focus — {t}",
-            f"Produce a one-page design note for “{detail}” with: goal, example inputs, expected outputs, metric, safety note.",
+            f"Produce a one-page design note for “{d}” with: goal, example inputs, expected outputs, metric, safety note.",
         ),
         f"DESIGN NOTE — {t}\nGoal:\nExample inputs:\nProcess idea:\nOutputs:\nMetric:\nSafety:\nOpen questions:",
         [
