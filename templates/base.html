@@ -12,25 +12,29 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header{% if self.body_class() and 'is-landing' in self.body_class() %} site-header--over{% endif %}">
-    <a class="brand" href="{{ url_for('home') if not current_user else url_for('dashboard') }}">
+    <a class="brand" href="{% if current_user and current_user.role == 'student' %}{{ url_for('home') }}{% elif current_user %}{{ url_for('dashboard') }}{% else %}{{ url_for('home') }}{% endif %}">
       Cloud<span>City</span>
     </a>
     <nav class="nav" aria-label="Primary">
       {% if current_user %}
         {% if current_user.role == 'student' %}
           <a href="{{ url_for('student_home') }}">My course</a>
+          <a href="{{ url_for('courses_catalog') }}">All courses</a>
         {% elif current_user.role == 'teacher' %}
           <a href="{{ url_for('teacher_home') }}">Teaching</a>
           <a href="{{ url_for('teacher_reviews') }}">Reviews</a>
+          <a href="{{ url_for('courses_catalog') }}">Catalog</a>
         {% elif current_user.role == 'admin' %}
           <a href="{{ url_for('admin_home') }}">Admin</a>
           <a href="{{ url_for('admin_users') }}">Users</a>
           <a href="{{ url_for('admin_assessments') }}">Assessments</a>
           <a href="{{ url_for('admin_certificates') }}">Certificates</a>
           <a href="{{ url_for('teacher_home') }}">Content</a>
+          <a href="{{ url_for('courses_catalog') }}">Catalog</a>
         {% endif %}
         <a href="{{ url_for('logout') }}">Sign out</a>
       {% else %}
+        <a href="{{ url_for('courses_catalog') }}">Courses</a>
         <a href="{{ url_for('login') }}">Student ID sign in</a>
       {% endif %}
     </nav>

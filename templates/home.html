@@ -19,21 +19,33 @@
       Office, Graphic Design (AI), and Video Editing (AI) finish in one month. Longer tracks run three to six months — weekly lessons, practice, and a certificate when you complete every week.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-light" href="{{ url_for('login') }}">Sign in with Student ID</a>
-      <a class="btn btn-ghost-light" href="#courses">Browse courses</a>
+      {% if current_user and current_user.role == 'student' %}
+        <a class="btn btn-light" href="{{ url_for('student_home') }}">My course</a>
+        <a class="btn btn-ghost-light" href="#courses">All courses</a>
+      {% else %}
+        <a class="btn btn-light" href="{{ url_for('login') }}">Sign in with Student ID</a>
+        <a class="btn btn-ghost-light" href="#courses">Browse courses</a>
+      {% endif %}
     </div>
   </div>
 </section>
 
 <section class="band band--paths" id="courses">
   <div class="band__intro">
-    <h2>Courses we run</h2>
-    <p>Your admin assigns a Student ID to one course. Sign in with that ID to open only the lessons and assessments for your course.</p>
+    <h2>All available courses</h2>
+    <p>
+      Full catalogue of programmes we offer.
+      {% if current_user and current_user.role == 'student' %}
+        Your assigned course is marked · only that one opens lessons for your Student ID.
+      {% else %}
+        Sign in with your Student ID to open the course your school assigned to you.
+      {% endif %}
+    </p>
   </div>
 
   <div class="path-grid path-grid--catalog">
     {% for c in courses %}
-    <article class="path-card">
+    <article class="path-card{% if my_course_id and c.id == my_course_id %} path-card--mine{% endif %}">
       <div
         class="path-card__photo"
         role="img"
@@ -41,9 +53,19 @@
         style="background-image: url('{{ course_images.get(c.slug, '') }}');"
       ></div>
       <div class="path-card__body">
-        <p class="path-card__tag">{{ category_labels.get(c.level, c.level) }}{% if c.duration %} · {{ c.duration }}{% endif %}</p>
+        <p class="path-card__tag">
+          {{ category_labels.get(c.level, c.level) }}{% if c.duration %} · {{ c.duration }}{% endif %}
+          {% if my_course_id and c.id == my_course_id %}
+            · <span class="badge done">Your course</span>
+          {% endif %}
+        </p>
         <h3 class="path-card__title">{{ c.title }}</h3>
         <p class="path-card__desc">{{ c.description }}</p>
+        {% if my_course_id and c.id == my_course_id %}
+          <a class="text-link path-card__cta" href="{{ url_for('student_home') }}">Open my lessons</a>
+        {% elif current_user and current_user.role == 'student' %}
+          <p class="muted path-card__cta">View only</p>
+        {% endif %}
       </div>
     </article>
     {% else %}

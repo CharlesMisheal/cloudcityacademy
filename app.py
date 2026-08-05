@@ -245,28 +245,53 @@ def course_complete(student_id: int, course_id: int) -> bool:
 
 
 def register_routes(app: Flask):
-    # ── Public ──────────────────────────────────────────────
-    @app.route("/")
-    def home():
-        if g.user:
-            return redirect(url_for("dashboard"))
-        courses = query_all(
-            "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
-        )
+    def _catalog_courses():
         from curriculum import duration_label
         from db import CATEGORY_LABELS, COURSE_IMAGES
 
+        courses = query_all(
+            "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
+        )
         course_rows = []
         for c in courses:
             d = dict(c)
             d["duration"] = duration_label(c["slug"])
             course_rows.append(d)
+        return course_rows, COURSE_IMAGES, CATEGORY_LABELS
 
+    # ── Public ──────────────────────────────────────────────
+    @app.route("/")
+    def home():
+        # Staff go to dashboards; students and visitors stay on public marketing + full catalog
+        if g.user and g.user["role"] in ("admin", "teacher"):
+            return redirect(url_for("dashboard"))
+        course_rows, images, labels = _catalog_courses()
+        my_course_id = None
+        if g.user and g.user["role"] == "student":
+            en = student_course(g.user["id"])
+            my_course_id = en["id"] if en else None
         return render_template(
             "home.html",
             courses=course_rows,
-            course_images=COURSE_IMAGES,
-            category_labels=CATEGORY_LABELS,
+            course_images=images,
+            category_labels=labels,
+            my_course_id=my_course_id,
+        )
+
+    @app.route("/courses")
+    def courses_catalog():
+        """Everyone can browse every active course (lessons unlock only with Student ID)."""
+        course_rows, images, labels = _catalog_courses()
+        my_course_id = None
+        if g.user and g.user["role"] == "student":
+            en = student_course(g.user["id"])
+            my_course_id = en["id"] if en else None
+        return render_template(
+            "courses.html",
+            courses=course_rows,
+            course_images=images,
+            category_labels=labels,
+            my_course_id=my_course_id,
         )
 
     @app.route("/register", methods=["GET", "POST"])
@@ -374,19 +399,22 @@ def register_routes(app: Flask):
     @role_required("student")
     def student_home():
         course = student_course(g.user["id"])
-        if not course:
+        catalog, images, labels = _catalog_courses()
+        weeks, done_ids, complete = [], set(), False
+        if course:
+            weeks, done_ids = week_progress(g.user["id"], course["id"])
+            complete = course_complete(g.user["id"], course["id"])
+        else:
             flash("You are not enrolled in an active course. Contact admin.", "warn")
-            return render_template(
-                "student/home.html", course=None, weeks=[], done_ids=set()
-            )
-        weeks, done_ids = week_progress(g.user["id"], course["id"])
-        complete = course_complete(g.user["id"], course["id"])
         return render_template(
             "student/home.html",
             course=course,
             weeks=weeks,
             done_ids=done_ids,
             complete=complete,
+            catalog=catalog,
+            course_images=images,
+            category_labels=labels,
         )
 
     @app.route("/student/week/<int:week_id>")

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Courses — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>All courses</h1>
+    <p>
+      Browse every programme we run.
+      {% if current_user and current_user.role == 'student' %}
+        Your Student ID unlocks lessons only for your assigned course (marked below).
+      {% else %}
+        Sign in with your Student ID to open the course your school assigned to you.
+      {% endif %}
+    </p>
+  </div>
+  {% if not current_user %}
+  <a class="btn" href="{{ url_for('login') }}">Sign in with Student ID</a>
+  {% elif current_user.role == 'student' and my_course_id %}
+  <a class="btn" href="{{ url_for('student_home') }}">Go to my course</a>
+  {% endif %}
+</div>
+
+<div class="path-grid path-grid--catalog">
+  {% for c in courses %}
+  <article class="path-card{% if my_course_id and c.id == my_course_id %} path-card--mine{% endif %}">
+    <div
+      class="path-card__photo"
+      role="img"
+      aria-label="{{ c.title }}"
+      style="background-image: url('{{ course_images.get(c.slug, '') }}');"
+    ></div>
+    <div class="path-card__body">
+      <p class="path-card__tag">
+        {{ category_labels.get(c.level, c.level) }}{% if c.duration %} · {{ c.duration }}{% endif %}
+        {% if my_course_id and c.id == my_course_id %}
+          · <span class="badge done">Your course</span>
+        {% endif %}
+      </p>
+      <h3 class="path-card__title">{{ c.title }}</h3>
+      <p class="path-card__desc">{{ c.description }}</p>
+      {% if my_course_id and c.id == my_course_id %}
+        <a class="text-link path-card__cta" href="{{ url_for('student_home') }}">Open my lessons</a>
+      {% elif current_user and current_user.role == 'student' %}
+        <p class="muted path-card__cta">View only — not assigned to your Student ID</p>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p class="muted">No courses published yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

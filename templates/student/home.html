@@ -4,9 +4,10 @@
 {% if not course %}
 <div class="page-head">
   <div>
-    <h1>No course yet</h1>
-    <p>Ask an admin to enroll you.</p>
+    <h1>No course assigned yet</h1>
+    <p>Ask an admin to link your Student ID to a course. You can still browse the full catalog below.</p>
   </div>
+  <a class="btn btn-ghost" href="{{ url_for('courses_catalog') }}">All courses</a>
 </div>
 {% else %}
 <div class="page-head">
@@ -45,4 +46,40 @@
   {% endfor %}
 </div>
 {% endif %}
+
+<section class="band band--paths" style="margin-top:2.5rem;padding-top:0">
+  <div class="band__intro">
+    <h2>All available courses</h2>
+    <p>Explore every programme at CloudCity Academy. Lessons and assessments stay locked to the course on your Student ID.</p>
+  </div>
+  <div class="path-grid path-grid--catalog">
+    {% for c in catalog %}
+    <article class="path-card{% if course and c.id == course.id %} path-card--mine{% endif %}">
+      <div
+        class="path-card__photo"
+        role="img"
+        aria-label="{{ c.title }}"
+        style="background-image: url('{{ course_images.get(c.slug, '') }}');"
+      ></div>
+      <div class="path-card__body">
+        <p class="path-card__tag">
+          {{ category_labels.get(c.level, c.level) }}{% if c.duration %} · {{ c.duration }}{% endif %}
+          {% if course and c.id == course.id %}
+            · <span class="badge done">Your course</span>
+          {% endif %}
+        </p>
+        <h3 class="path-card__title">{{ c.title }}</h3>
+        <p class="path-card__desc">{{ c.description }}</p>
+        {% if course and c.id == course.id %}
+          <p class="muted path-card__cta">You have access — use the weeks above</p>
+        {% else %}
+          <p class="muted path-card__cta">Catalog only — not on your Student ID</p>
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    <p class="muted">No courses listed yet.</p>
+    {% endfor %}
+  </div>
+</section>
 {% endblock %}
