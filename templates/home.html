@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}CloudCity Academy — Python classroom{% endblock %}
+{% block title %}CloudCity Academy — digital skills training{% endblock %}
 {% block body_class %}is-landing{% endblock %}
 {% block main_class %}main--flush{% endblock %}
 {% block content %}
@@ -8,15 +8,15 @@
   <div
     class="hero-full__media"
     role="img"
-    aria-label="Laptop with code in a calm study setting"
-    style="background-image: url('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&amp;fit=crop&amp;w=2200&amp;q=80');"
+    aria-label="Focused learning workspace"
+    style="background-image: url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&amp;fit=crop&amp;w=2200&amp;q=80');"
   ></div>
   <div class="hero-full__veil"></div>
   <div class="hero-full__copy">
     <p class="hero-full__brand">CloudCity Academy</p>
-    <h1>Learn Python with weekly practice.</h1>
+    <h1>Build practical digital skills.</h1>
     <p class="hero-full__lead">
-      Beginner and advanced paths — lessons, assessments, and a course certificate.
+      Office, design, coding, AI, web, mobile and more — weekly lessons, assessments, and a course certificate.
     </p>
     <div class="hero-actions">
       <a class="btn btn-light" href="{{ url_for('register') }}">Enrol now</a>
@@ -27,24 +27,24 @@
 
 <section class="band band--paths">
   <div class="band__intro">
-    <h2>Choose your course</h2>
-    <p>Enrol once, pick a track, and follow the weeks at your pace.</p>
+    <h2>Available courses</h2>
+    <p>Choose the track you are enrolled for. Teachers prepare weekly notes, examples, and assessments.</p>
   </div>
 
-  <div class="path-grid">
+  <div class="path-grid path-grid--catalog">
     {% for c in courses %}
-    <article class="path-item">
+    <article class="path-item path-item--compact">
       <div
         class="path-item__photo"
         role="img"
         aria-label="{{ c.title }}"
-        style="background-image: url('{% if c.level == 'beginner' %}https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&amp;fit=crop&amp;w=1200&amp;q=80{% else %}https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&amp;fit=crop&amp;w=1200&amp;q=80{% endif %}');"
+        style="background-image: url('{{ category_images.get(c.level, category_images.get('python')) }}');"
       ></div>
       <div class="path-item__body">
-        <p class="path-item__level">{{ c.level }}</p>
+        <p class="path-item__level">{{ category_labels.get(c.level, c.level) }}</p>
         <h3>{{ c.title }}</h3>
         <p>{{ c.description }}</p>
-        <a class="text-link" href="{{ url_for('register') }}">Enrol in this course →</a>
+        <a class="text-link" href="{{ url_for('register') }}?course={{ c.id }}">Enrol in this course →</a>
       </div>
     </article>
     {% else %}

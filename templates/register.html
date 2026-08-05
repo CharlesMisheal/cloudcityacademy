@@ -26,9 +26,9 @@
       </label>
       <label>Course
         <select name="course_id" required>
-          <option value="" disabled selected>Select a course</option>
+          <option value="" disabled {% if not selected_course %}selected{% endif %}>Select a course</option>
           {% for c in courses %}
-          <option value="{{ c.id }}">{{ c.title }} ({{ c.level }})</option>
+          <option value="{{ c.id }}" {% if selected_course and selected_course|string == c.id|string %}selected{% endif %}>{{ c.title }}</option>
           {% endfor %}
         </select>
       </label>

@@ -334,6 +334,32 @@ a.staff-quiet:hover {
   gap: clamp(1.25rem, 3vw, 2rem);
 }
 
+.path-grid--catalog {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.35rem 1.25rem;
+}
+
+.path-item--compact {
+  grid-template-rows: 140px auto;
+}
+
+.path-item--compact .path-item__photo {
+  min-height: 140px;
+}
+
+.path-item--compact h3 {
+  font-size: 1.1rem;
+}
+
+.path-item--compact p:not(.path-item__level) {
+  font-size: 0.88rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
 .path-item {
   display: grid;
   grid-template-rows: 220px auto;
@@ -963,6 +989,7 @@ body.is-auth .flash-wrap {
 
 @media (max-width: 880px) {
   .path-grid,
+  .path-grid--catalog,
   .story,
   .auth-layout,
   .split-2 {

@@ -1,4 +1,4 @@
-"""SQLite helpers — free, file-based, no external DB."""
+"""SQLite helpers — local file-based database."""
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -7,6 +7,134 @@ from pathlib import Path
 
 from flask import current_app, g
 from werkzeug.security import generate_password_hash
+
+# level field stores a category used for grouping / imagery
+# (slug, title, category, description)
+COURSE_CATALOG = [
+    (
+        "office-ms-word",
+        "Office Application (MS Word)",
+        "office",
+        "Create and format professional documents, letters, reports, and templates in Microsoft Word.",
+    ),
+    (
+        "office-excel",
+        "Office Application (Excel)",
+        "office",
+        "Work with spreadsheets, formulas, charts, and data tables in Microsoft Excel.",
+    ),
+    (
+        "office-powerpoint",
+        "Office Application (PowerPoint)",
+        "office",
+        "Design clear slide decks, presentations, and storytelling with Microsoft PowerPoint.",
+    ),
+    (
+        "graphic-coreldraw",
+        "Graphic Design (CorelDRAW)",
+        "design",
+        "Vector graphics, layouts, branding and print-ready artwork using CorelDRAW.",
+    ),
+    (
+        "graphic-ai",
+        "Graphic Design (AI)",
+        "design",
+        "Modern visual design with AI-assisted tools for posters, social media and creative assets.",
+    ),
+    (
+        "video-editing-ai",
+        "Video Editing & Animation (AI)",
+        "media",
+        "Edit video, motion, and simple animation with AI-assisted production workflows.",
+    ),
+    (
+        "ai-engineer",
+        "AI Engineer",
+        "ai",
+        "Foundations of applied AI: models, tools, prompts, and building useful AI solutions.",
+    ),
+    (
+        "python-developer",
+        "Python Developer",
+        "python",
+        "Write clean Python code, solve problems, and build developer habits for real projects.",
+    ),
+    (
+        "system-design-thinking",
+        "System Design / Thinking",
+        "systems",
+        "Design thinking and systems thinking: problem framing, architecture concepts, and structured solutions.",
+    ),
+    (
+        "python-data-apps",
+        "Python & Data Apps",
+        "python",
+        "Use Python for data work and build small data-driven applications.",
+    ),
+    (
+        "python-blocks",
+        "Python Blocks",
+        "kids",
+        "Visual block-based path into Python concepts for younger or early learners.",
+    ),
+    (
+        "scratch",
+        "Scratch",
+        "kids",
+        "Create interactive stories, games and animations with Scratch.",
+    ),
+    (
+        "android-app-development",
+        "Android App Development",
+        "mobile",
+        "Build mobile apps for Android — screens, layout, and packaging a simple app.",
+    ),
+    (
+        "website-development",
+        "Website Development",
+        "web",
+        "Create modern websites with structure, styling, and practical project delivery.",
+    ),
+    (
+        "python-for-beginners",
+        "Python for Beginners",
+        "python",
+        "Start Python from zero: syntax, variables, simple programs and hands-on practice.",
+    ),
+    (
+        "cloud-computing",
+        "Cloud Computing",
+        "cloud",
+        "Cloud concepts, services, deployment ideas, and how modern apps run online.",
+    ),
+]
+
+CATEGORY_LABELS = {
+    "office": "Office",
+    "design": "Design",
+    "media": "Media",
+    "ai": "AI",
+    "python": "Python",
+    "systems": "Systems",
+    "kids": "Kids & blocks",
+    "mobile": "Mobile",
+    "web": "Web",
+    "cloud": "Cloud",
+}
+
+# Free Unsplash images by category (loaded in the browser, no API key)
+CATEGORY_IMAGES = {
+    "office": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=900&q=80",
+    "design": "https://images.unsplash.com/photo-1626785774573-4b7993143485?auto=format&fit=crop&w=900&q=80",
+    "media": "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=80",
+    "ai": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80",
+    "python": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=80",
+    "systems": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80",
+    "kids": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=80",
+    "mobile": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=900&q=80",
+    "web": "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=900&q=80",
+    "cloud": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80",
+}
 
 
 def get_db():
@@ -72,7 +200,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             slug TEXT NOT NULL UNIQUE,
             title TEXT NOT NULL,
-            level TEXT NOT NULL CHECK(level IN ('beginner', 'advanced')),
+            level TEXT NOT NULL,
             description TEXT NOT NULL,
             is_active INTEGER NOT NULL DEFAULT 1
         );
@@ -172,10 +300,154 @@ def ensure_staff_user(full_name, email, password, role):
     return cur.lastrowid
 
 
-def seed_if_empty():
-    """Seed courses + demo staff. Safe to call every boot."""
-    now = datetime.utcnow().isoformat(timespec="seconds")
+def _seed_week_one_content(course_slug, course_title, teacher_id, now):
+    course = query_one("SELECT id FROM courses WHERE slug = ?", (course_slug,))
+    if not course:
+        return
+    week1 = query_one(
+        "SELECT id FROM weeks WHERE course_id = ? AND week_number = 1",
+        (course["id"],),
+    )
+    if not week1 or query_one("SELECT id FROM notes WHERE week_id = ?", (week1["id"],)):
+        return
 
+    execute(
+        """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
+           VALUES (?,?,?,?,?,?)""",
+        (
+            week1["id"],
+            teacher_id,
+            f"Welcome to {course_title}",
+            f"Welcome to CloudCity Academy.\n\n"
+            f"This is Week 1 of {course_title}. Your teacher will expand notes and examples here.\n\n"
+            f"Build good habits from day one: save your work, follow class naming rules, "
+            f"and capture clear screenshots for your weekly assessment.",
+            "Checklist:\n1. Open the class software\n2. Create / save your first practice file\n"
+            "3. Name it clearly (YourName_Week1)\n4. Screenshot your work when ready",
+            now,
+        ),
+    )
+    q_seed = [
+        (
+            "mcq",
+            f"What is the first recommended habit in {course_title}?",
+            json.dumps(
+                [
+                    "Skip practice",
+                    "Save and name files carefully",
+                    "Never take screenshots",
+                    "Ignore the lesson notes",
+                ]
+            ),
+            "Save and name files carefully",
+            2,
+            1,
+        ),
+        (
+            "mcq",
+            "Weekly assessments may include:",
+            json.dumps(
+                [
+                    "Only multiple choice",
+                    "MCQ, written answers, and screenshots",
+                    "Payment only",
+                    "Nothing practical",
+                ]
+            ),
+            "MCQ, written answers, and screenshots",
+            2,
+            2,
+        ),
+        (
+            "subjective",
+            f"In one or two sentences, what do you hope to learn in {course_title}?",
+            None,
+            None,
+            3,
+            3,
+        ),
+        (
+            "upload",
+            "Upload a screenshot of your first practice session this week.",
+            None,
+            None,
+            3,
+            4,
+        ),
+    ]
+    for qtype, prompt, options, correct, points, order in q_seed:
+        execute(
+            """INSERT INTO questions
+               (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
+               VALUES (?,?,?,?,?,?,?)""",
+            (week1["id"], qtype, prompt, options, correct, points, order),
+        )
+
+
+def ensure_course_catalog(teacher_id):
+    """Install / refresh the live course list (safe to run every boot)."""
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    active_slugs = [row[0] for row in COURSE_CATALOG]
+
+    # Hide anything not in the current catalog
+    if active_slugs:
+        placeholders = ",".join("?" * len(active_slugs))
+        execute(
+            f"UPDATE courses SET is_active = 0 WHERE slug NOT IN ({placeholders})",
+            tuple(active_slugs),
+        )
+
+    for slug, title, category, desc in COURSE_CATALOG:
+        row = query_one("SELECT id FROM courses WHERE slug = ?", (slug,))
+        if row:
+            execute(
+                """UPDATE courses SET title = ?, level = ?, description = ?, is_active = 1
+                   WHERE id = ?""",
+                (title, category, desc, row["id"]),
+            )
+            course_id = row["id"]
+        else:
+            cur = execute(
+                """INSERT INTO courses (slug, title, level, description, is_active)
+                   VALUES (?,?,?,?,1)""",
+                (slug, title, category, desc),
+            )
+            course_id = cur.lastrowid
+            for n in range(1, 5):
+                execute(
+                    """INSERT INTO weeks (course_id, week_number, title, is_published)
+                       VALUES (?,?,?,1)""",
+                    (
+                        course_id,
+                        n,
+                        "Week 1: Getting Started" if n == 1 else f"Week {n}",
+                    ),
+                )
+
+        execute(
+            "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
+            (teacher_id, course_id),
+        )
+        week_count = query_one(
+            "SELECT COUNT(*) AS c FROM weeks WHERE course_id = ?", (course_id,)
+        )["c"]
+        if week_count == 0:
+            for n in range(1, 5):
+                execute(
+                    """INSERT INTO weeks (course_id, week_number, title, is_published)
+                       VALUES (?,?,?,1)""",
+                    (
+                        course_id,
+                        n,
+                        "Week 1: Getting Started" if n == 1 else f"Week {n}",
+                    ),
+                )
+
+        _seed_week_one_content(slug, title, teacher_id, now)
+
+
+def seed_if_empty():
+    """Seed staff + course catalog. Safe to call every boot."""
     admin_id = ensure_staff_user(
         "CloudCity Admin",
         "admin@cloudcity.local",
@@ -188,112 +460,5 @@ def seed_if_empty():
         "Teacher123!",
         "teacher",
     )
-
-    if not query_one("SELECT id FROM courses LIMIT 1"):
-        courses = [
-            (
-                "python-beginners",
-                "Python Beginners",
-                "beginner",
-                "Foundations of Python for absolute beginners: syntax, data types, control flow, and practice.",
-            ),
-            (
-                "python-advanced",
-                "Python Advanced",
-                "advanced",
-                "Deeper Python: functions mastery, OOP, files, modules, and applied problem solving.",
-            ),
-        ]
-        for slug, title, level, desc in courses:
-            execute(
-                "INSERT INTO courses (slug, title, level, description, is_active) VALUES (?,?,?,?,1)",
-                (slug, title, level, desc),
-            )
-
-        for course in query_all("SELECT id FROM courses"):
-            execute(
-                "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
-                (teacher_id, course["id"]),
-            )
-            for n in range(1, 5):
-                execute(
-                    "INSERT INTO weeks (course_id, week_number, title, is_published) VALUES (?,?,?,1)",
-                    (
-                        course["id"],
-                        n,
-                        f"Week {n}: Getting Started" if n == 1 else f"Week {n}",
-                    ),
-                )
-
-        begin = query_one("SELECT id FROM courses WHERE slug = ?", ("python-beginners",))
-        week1 = query_one(
-            "SELECT id FROM weeks WHERE course_id = ? AND week_number = 1",
-            (begin["id"],),
-        )
-        if week1 and not query_one("SELECT id FROM notes WHERE week_id = ?", (week1["id"],)):
-            execute(
-                """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
-                   VALUES (?,?,?,?,?,?)""",
-                (
-                    week1["id"],
-                    teacher_id,
-                    "Hello, Python",
-                    "Welcome to CloudCity Academy.\n\n"
-                    "This week you will write your first programs: print messages, store values in variables, "
-                    "and understand how Python runs line by line.\n\n"
-                    "Focus on clarity. Small programs, run often.",
-                    'print("Hello, CloudCity")\n\nname = "Ada"\nprint("Hello,", name)',
-                    now,
-                ),
-            )
-            q_seed = [
-                (
-                    "mcq",
-                    "Which function displays text in Python?",
-                    json.dumps(["echo()", "print()", "show()", "display()"]),
-                    "print()",
-                    2,
-                    1,
-                ),
-                (
-                    "mcq",
-                    "Which symbol starts a comment in Python?",
-                    json.dumps(["//", "/*", "#", "--"]),
-                    "#",
-                    2,
-                    2,
-                ),
-                (
-                    "subjective",
-                    "In one or two sentences, explain what a variable is.",
-                    None,
-                    None,
-                    3,
-                    3,
-                ),
-                (
-                    "upload",
-                    "Upload a screenshot of your first print program running successfully.",
-                    None,
-                    None,
-                    3,
-                    4,
-                ),
-            ]
-            for qtype, prompt, options, correct, points, order in q_seed:
-                execute(
-                    """INSERT INTO questions
-                       (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
-                       VALUES (?,?,?,?,?,?,?)""",
-                    (week1["id"], qtype, prompt, options, correct, points, order),
-                )
-    else:
-        # Keep teacher linked to all courses
-        for course in query_all("SELECT id FROM courses"):
-            execute(
-                "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
-                (teacher_id, course["id"]),
-            )
-
-    # silence unused if analysis tools complain about admin_id
+    ensure_course_catalog(teacher_id)
     _ = admin_id

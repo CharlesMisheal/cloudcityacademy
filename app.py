@@ -146,17 +146,25 @@ def register_routes(app: Flask):
         if g.user:
             return redirect(url_for("dashboard"))
         courses = query_all(
-            "SELECT * FROM courses WHERE is_active = 1 ORDER BY level, title"
+            "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
         )
-        return render_template("home.html", courses=courses)
+        from db import CATEGORY_IMAGES, CATEGORY_LABELS
+
+        return render_template(
+            "home.html",
+            courses=courses,
+            category_images=CATEGORY_IMAGES,
+            category_labels=CATEGORY_LABELS,
+        )
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
         if g.user:
             return redirect(url_for("dashboard"))
         courses = query_all(
-            "SELECT * FROM courses WHERE is_active = 1 ORDER BY level, title"
+            "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
         )
+        selected_course = request.args.get("course") or request.form.get("course_id")
         if request.method == "POST":
             name = (request.form.get("full_name") or "").strip()
             email = (request.form.get("email") or "").strip().lower()
@@ -165,18 +173,24 @@ def register_routes(app: Flask):
 
             if not name or not email or len(password) < 6 or not course_id:
                 flash("Fill all fields. Password must be at least 6 characters.", "error")
-                return render_template("register.html", courses=courses)
+                return render_template(
+                    "register.html", courses=courses, selected_course=course_id
+                )
 
             course = query_one(
                 "SELECT * FROM courses WHERE id = ? AND is_active = 1", (course_id,)
             )
             if not course:
                 flash("Choose a valid course.", "error")
-                return render_template("register.html", courses=courses)
+                return render_template(
+                    "register.html", courses=courses, selected_course=selected_course
+                )
 
             if query_one("SELECT id FROM users WHERE email = ?", (email,)):
                 flash("That email is already registered. Sign in instead.", "error")
-                return render_template("register.html", courses=courses)
+                return render_template(
+                    "register.html", courses=courses, selected_course=course_id
+                )
 
             cur = execute(
                 """INSERT INTO users (full_name, email, password_hash, role, is_active, created_at)
@@ -192,7 +206,9 @@ def register_routes(app: Flask):
             flash(f"Welcome to CloudCity — you joined {course['title']}.", "ok")
             return redirect(url_for("student_home"))
 
-        return render_template("register.html", courses=courses)
+        return render_template(
+            "register.html", courses=courses, selected_course=selected_course
+        )
 
     @app.route("/login", methods=["GET", "POST"])
     def login():

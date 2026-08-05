@@ -88,7 +88,7 @@ def build_certificate_pdf(
     c.drawCentredString(
         width / 2,
         18 * mm,
-        "CloudCity Academy — Python learning for beginners and advanced learners",
+        "CloudCity Academy — digital skills training",
     )
 
     c.showPage()
