@@ -389,14 +389,10 @@ def ensure_course_weeks(course_id: int, slug: str, course_title: str, teacher_id
         )
         title = week_title(n, topic)
         if w:
-            # Keep custom teacher titles if already specific; otherwise update
-            if not w["title"] or w["title"] == f"Week {n}" or w["title"].startswith(
-                "Week 1: Getting"
-            ):
-                execute(
-                    "UPDATE weeks SET title = ?, is_published = 1 WHERE id = ?",
-                    (title, w["id"]),
-                )
+            execute(
+                "UPDATE weeks SET title = ?, is_published = 1 WHERE id = ?",
+                (title, w["id"]),
+            )
             week_id = w["id"]
         else:
             cur = execute(
@@ -410,8 +406,7 @@ def ensure_course_weeks(course_id: int, slug: str, course_title: str, teacher_id
             week_id, course_title, n, total, topic, teacher_id, now
         )
 
-    # Hide extra weeks beyond curriculum length (if older DB had only placeholders extras — rare)
-    # Publish only up to total; leave higher weeks unpublished if any leftover
+    # Unpublish weeks beyond the current curriculum length (e.g. course shortened)
     extras = query_all(
         "SELECT id, week_number FROM weeks WHERE course_id = ? AND week_number > ?",
         (course_id, total),
