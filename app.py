@@ -301,48 +301,88 @@ def register_routes(app: Flask):
     def register():
         """Public self-enrolment removed — admin issues Student IDs."""
         flash(
-            "Enrolment is by Student ID only. Your school gives you a Student ID with your course assigned. "
-            "Use Sign in with that ID.",
+            "Enrolment is by Student ID only. Your CloudCity Admin gives you a Student ID "
+            "with your course assigned. Enter that ID to sign in.",
             "warn",
         )
         return redirect(url_for("login"))
 
+    def _sign_in_student_from_code(code: str, *, fail_template="login.html"):
+        """Shared student ID login used by /login and global header form."""
+        code = normalize_student_code(code)
+        if not code:
+            flash("Enter your Student ID.", "error")
+            return None
+        user = query_one(
+            """SELECT * FROM users
+               WHERE student_code = ? AND role = 'student' AND is_active = 1""",
+            (code,),
+        )
+        if not user:
+            flash(
+                "Student ID not found or inactive. Ask your CloudCity Admin to register you.",
+                "error",
+            )
+            return None
+        course = student_course(user["id"])
+        if not course:
+            flash(
+                "Your Student ID has no course yet. Contact your CloudCity Admin.",
+                "error",
+            )
+            return None
+        session.clear()
+        session["user_id"] = user["id"]
+        first = (user["full_name"] or "Student").split()[0]
+        flash(f"Welcome, {first}. You are in {course['title']}.", "ok")
+        return user
+
     @app.route("/login", methods=["GET", "POST"])
     def login():
-        """Students sign in with Student ID only (no password)."""
-        if g.user:
+        """Students sign in with Student ID only (no password). Can switch ID anytime."""
+        # Staff already signed in → their dashboard (not ID form)
+        if g.user and g.user["role"] in ("admin", "teacher") and request.method == "GET":
             return redirect(url_for("dashboard"))
         if request.method == "POST":
-            code = normalize_student_code(request.form.get("student_code") or "")
-            if not code:
-                flash("Enter your Student ID.", "error")
-                return render_template("login.html", staff=False)
-            user = query_one(
-                """SELECT * FROM users
-                   WHERE student_code = ? AND role = 'student' AND is_active = 1""",
-                (code,),
-            )
+            # Allow switching Student ID even if already signed in as a student
+            if g.user and g.user["role"] in ("admin", "teacher"):
+                flash("Sign out of the staff account first, or use Staff only.", "warn")
+                return redirect(url_for("dashboard"))
+            user = _sign_in_student_from_code(request.form.get("student_code") or "")
             if not user:
-                flash(
-                    "Student ID not found or inactive. Ask your admin to register you.",
-                    "error",
-                )
                 return render_template("login.html", staff=False)
-            course = student_course(user["id"])
-            if not course:
-                flash(
-                    "Your Student ID has no course yet. Contact admin.",
-                    "error",
-                )
-                return render_template("login.html", staff=False)
-            session["user_id"] = user["id"]
-            first = (user["full_name"] or "Student").split()[0]
-            flash(f"Welcome, {first}. You are in {course['title']}.", "ok")
-            nxt = request.args.get("next")
-            if nxt:
+            nxt = request.form.get("next") or request.args.get("next")
+            if nxt and str(nxt).startswith("/"):
                 return redirect(nxt)
             return redirect(url_for("student_home"))
         return render_template("login.html", staff=False)
+
+    @app.route("/student-id", methods=["POST"])
+    def student_id_anywhere():
+        """Enter or switch Student ID from the bar on any page."""
+        if g.user and g.user["role"] in ("admin", "teacher"):
+            flash("Staff accounts cannot sign in with Student ID. Sign out first.", "warn")
+            return redirect(request.referrer or url_for("dashboard"))
+        user = _sign_in_student_from_code(request.form.get("student_code") or "")
+        if not user:
+            return redirect(request.referrer or url_for("login"))
+        nxt = request.form.get("next") or ""
+        if nxt and str(nxt).startswith("/"):
+            return redirect(nxt)
+        return redirect(url_for("student_home"))
+
+    @app.route("/drop-student-id", methods=["GET", "POST"])
+    def drop_student_id():
+        """Clear Student ID session from any page (leave the student account)."""
+        if g.user and g.user["role"] == "student":
+            session.clear()
+            flash("Student ID dropped. You can enter another ID anytime.", "ok")
+        elif g.user:
+            flash("That action is for student sessions only.", "warn")
+            return redirect(url_for("dashboard"))
+        else:
+            flash("No Student ID is signed in.", "warn")
+        return redirect(url_for("home"))
 
     @app.route("/staff", methods=["GET", "POST"])
     def staff_login():
@@ -383,8 +423,12 @@ def register_routes(app: Flask):
 
     @app.route("/logout")
     def logout():
+        was_student = g.user and g.user["role"] == "student"
         session.clear()
-        flash("Signed out.", "ok")
+        if was_student:
+            flash("Student ID dropped. Signed out.", "ok")
+        else:
+            flash("Signed out.", "ok")
         return redirect(url_for("home"))
 
     @app.route("/dashboard")

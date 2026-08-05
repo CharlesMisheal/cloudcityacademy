@@ -65,6 +65,100 @@ a:hover {
   color: var(--ink);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Global Student ID bar — enter or drop ID from any page */
+.id-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.id-bar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.55rem clamp(1rem, 4vw, 2.5rem);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.id-bar__status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.id-bar__status strong {
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.id-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.id-bar__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: min(100%, 16rem);
+  justify-content: flex-end;
+}
+
+.id-bar__form input[type="text"] {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+  max-width: 22rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.id-bar__form input::placeholder {
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.id-bar .btn-sm {
+  white-space: nowrap;
+}
+
+.id-bar .btn-ghost {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #e2e8f0;
+  background: transparent;
+}
+
+.id-bar .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
 /* ——— Header ——— */
 .site-header {
   display: flex;

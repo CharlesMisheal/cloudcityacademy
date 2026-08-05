@@ -11,6 +11,41 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
+  {# Student ID available on every non-staff page #}
+  {% if not current_user or current_user.role == 'student' %}
+  <div class="id-bar" role="region" aria-label="Student ID">
+    <div class="id-bar__inner">
+      {% if current_user and current_user.role == 'student' %}
+      <p class="id-bar__status">
+        Active ID: <strong>{{ current_user.student_code or '—' }}</strong>
+        <span class="muted">· {{ current_user.full_name }}</span>
+      </p>
+      <div class="id-bar__actions">
+        <form class="id-bar__form" method="post" action="{{ url_for('student_id_anywhere') }}">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <label class="sr-only" for="id-bar-switch">Switch Student ID</label>
+          <input id="id-bar-switch" type="text" name="student_code"
+                 placeholder="Switch to another Student ID" autocapitalize="characters"
+                 autocomplete="username">
+          <button class="btn btn-sm" type="submit">Switch ID</button>
+        </form>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('drop_student_id') }}">Drop Student ID</a>
+      </div>
+      {% else %}
+      <p class="id-bar__status">Student access</p>
+      <form class="id-bar__form" method="post" action="{{ url_for('student_id_anywhere') }}">
+        <input type="hidden" name="next" value="{{ request.path if request.path not in ['/login', '/logout', '/drop-student-id'] else url_for('student_home') }}">
+        <label class="sr-only" for="id-bar-enter">Student ID</label>
+        <input id="id-bar-enter" type="text" name="student_code" required
+               placeholder="Enter Student ID from your CloudCity Admin"
+               autocapitalize="characters" autocomplete="username">
+        <button class="btn btn-sm" type="submit">Enter course</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <header class="site-header{% if self.body_class() and 'is-landing' in self.body_class() %} site-header--over{% endif %}">
     <a class="brand" href="{% if current_user and current_user.role == 'student' %}{{ url_for('home') }}{% elif current_user %}{{ url_for('dashboard') }}{% else %}{{ url_for('home') }}{% endif %}">
       Cloud<span>City</span>
@@ -20,6 +55,7 @@
         {% if current_user.role == 'student' %}
           <a href="{{ url_for('student_home') }}">My course</a>
           <a href="{{ url_for('courses_catalog') }}">All courses</a>
+          <a href="{{ url_for('drop_student_id') }}">Drop ID</a>
         {% elif current_user.role == 'teacher' %}
           <a href="{{ url_for('teacher_home') }}">Teaching</a>
           <a href="{{ url_for('teacher_reviews') }}">Reviews</a>
@@ -35,7 +71,7 @@
         <a href="{{ url_for('logout') }}">Sign out</a>
       {% else %}
         <a href="{{ url_for('courses_catalog') }}">Courses</a>
-        <a href="{{ url_for('login') }}">Student ID sign in</a>
+        <a href="{{ url_for('login') }}">Student ID</a>
       {% endif %}
     </nav>
   </header>
@@ -64,6 +100,8 @@
         <span>{{ PUBLIC_HOST }}</span>
         {% if not current_user %}
           <a class="staff-quiet" href="{{ url_for('staff_login') }}">Staff</a>
+        {% elif current_user.role == 'student' %}
+          <a class="staff-quiet" href="{{ url_for('drop_student_id') }}">Drop Student ID</a>
         {% endif %}
       </div>
     </div>
