@@ -32,7 +32,7 @@
             {% if u.role == 'student' %}
               {{ u.course_title or '—' }}
             {% elif u.role == 'teacher' %}
-              {% set ids = teacher_assign.get(u.id, set()) %}
+              {% set ids = teacher_assign.get(u.id) %}
               {% if ids %}
                 {{ ids|length }} course(s)
               {% else %}
@@ -94,11 +94,11 @@
       <strong>{{ t.full_name }}</strong>
       <span class="muted"> · {{ t.email }}</span>
       <label style="margin-top:0.5rem">Courses
-        {% set ids = teacher_assign.get(t.id, set()) %}
+        {% set ids = teacher_assign.get(t.id) %}
         {% for c in courses %}
         <label style="font-weight:500;color:var(--ink)">
           <input type="checkbox" name="course_ids" value="{{ c.id }}"
-            {% if c.id in ids %}checked{% endif %}> {{ c.title }}
+            {% if ids and c.id in ids %}checked{% endif %}> {{ c.title }}
         </label>
         {% endfor %}
       </label>
