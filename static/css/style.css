@@ -405,9 +405,10 @@ a.staff-quiet:hover {
 }
 
 .path-card__photo--python-blocks {
-  background-color: #d3dce8;
-  background-size: cover;
-  background-position: center top;
+  background-color: #dde5f0;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
 }
 
 .path-card__body {
