@@ -244,11 +244,18 @@ def register_routes(app: Flask):
         courses = query_all(
             "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
         )
+        from curriculum import duration_label
         from db import CATEGORY_LABELS, COURSE_IMAGES
+
+        course_rows = []
+        for c in courses:
+            d = dict(c)
+            d["duration"] = duration_label(c["slug"])
+            course_rows.append(d)
 
         return render_template(
             "home.html",
-            courses=courses,
+            courses=course_rows,
             course_images=COURSE_IMAGES,
             category_labels=CATEGORY_LABELS,
         )

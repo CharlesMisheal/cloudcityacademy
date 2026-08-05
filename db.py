@@ -307,96 +307,124 @@ def ensure_staff_user(full_name, email, password, role):
     return cur.lastrowid
 
 
-def _seed_week_one_content(course_slug, course_title, teacher_id, now):
-    course = query_one("SELECT id FROM courses WHERE slug = ?", (course_slug,))
-    if not course:
-        return
-    week1 = query_one(
-        "SELECT id FROM weeks WHERE course_id = ? AND week_number = 1",
-        (course["id"],),
-    )
-    if not week1 or query_one("SELECT id FROM notes WHERE week_id = ?", (week1["id"],)):
-        return
+def _seed_or_refresh_week(
+    week_id: int,
+    course_title: str,
+    week_num: int,
+    total: int,
+    topic: str,
+    teacher_id: int,
+    now: str,
+):
+    from curriculum import lesson_content, lesson_examples, week_questions
 
-    execute(
-        """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
-           VALUES (?,?,?,?,?,?)""",
-        (
-            week1["id"],
-            teacher_id,
-            f"Welcome to {course_title}",
-            f"Welcome to CloudCity Academy.\n\n"
-            f"This is Week 1 of {course_title}. Your teacher will expand notes and examples here.\n\n"
-            f"Build good habits from day one: save your work, follow class naming rules, "
-            f"and capture clear screenshots for your weekly assessment.",
-            "Checklist:\n1. Open the class software\n2. Create / save your first practice file\n"
-            "3. Name it clearly (YourName_Week1)\n4. Screenshot your work when ready",
-            now,
-        ),
+    marker = "[[CCA_CURRICULUM_V1]]"
+    note = query_one(
+        "SELECT * FROM notes WHERE week_id = ? ORDER BY updated_at DESC LIMIT 1",
+        (week_id,),
     )
-    q_seed = [
-        (
-            "mcq",
-            f"What is the first recommended habit in {course_title}?",
-            json.dumps(
-                [
-                    "Skip practice",
-                    "Save and name files carefully",
-                    "Never take screenshots",
-                    "Ignore the lesson notes",
-                ]
-            ),
-            "Save and name files carefully",
-            2,
-            1,
-        ),
-        (
-            "mcq",
-            "Weekly assessments may include:",
-            json.dumps(
-                [
-                    "Only multiple choice",
-                    "MCQ, written answers, and screenshots",
-                    "Payment only",
-                    "Nothing practical",
-                ]
-            ),
-            "MCQ, written answers, and screenshots",
-            2,
-            2,
-        ),
-        (
-            "subjective",
-            f"In one or two sentences, what do you hope to learn in {course_title}?",
-            None,
-            None,
-            3,
-            3,
-        ),
-        (
-            "upload",
-            "Upload a screenshot of your first practice session this week.",
-            None,
-            None,
-            3,
-            4,
-        ),
-    ]
-    for qtype, prompt, options, correct, points, order in q_seed:
-        execute(
-            """INSERT INTO questions
-               (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
-               VALUES (?,?,?,?,?,?,?)""",
-            (week1["id"], qtype, prompt, options, correct, points, order),
+    content = lesson_content(course_title, week_num, total, topic)
+    examples = lesson_examples(course_title, week_num, topic)
+    focus = topic.split("—")[0].strip()
+    title = f"Week {week_num}: {focus}"
+    if len(title) > 80:
+        title = title[:77] + "…"
+
+    already_curric = bool(note and marker in (note["content"] or ""))
+    thin_starter = bool(
+        note
+        and (
+            "Your teacher will expand" in (note["content"] or "")
+            or "Welcome to CloudCity Academy" in (note["content"] or "")
+            and marker not in (note["content"] or "")
         )
+    )
+
+    if already_curric:
+        pass
+    elif note:
+        execute(
+            """UPDATE notes SET title=?, content=?, examples=?, teacher_id=?, updated_at=?
+               WHERE id=?""",
+            (title, content, examples, teacher_id, now, note["id"]),
+        )
+    else:
+        execute(
+            """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
+               VALUES (?,?,?,?,?,?)""",
+            (week_id, teacher_id, title, content, examples, now),
+        )
+
+    qcount = query_one(
+        "SELECT COUNT(*) AS c FROM questions WHERE week_id = ?", (week_id,)
+    )["c"]
+
+    should_seed_qs = qcount == 0 or (thin_starter and qcount <= 4 and not already_curric)
+    if should_seed_qs:
+        if qcount:
+            execute("DELETE FROM questions WHERE week_id = ?", (week_id,))
+        for qtype, prompt, options, correct, points, order in week_questions(
+            course_title, week_num, total, topic
+        ):
+            execute(
+                """INSERT INTO questions
+                   (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (week_id, qtype, prompt, options, correct, points, order),
+            )
+
+
+def ensure_course_weeks(course_id: int, slug: str, course_title: str, teacher_id: int, now: str):
+    from curriculum import curriculum_for, week_title, weeks_for
+
+    plan = curriculum_for(slug)
+    total = weeks_for(slug)
+
+    for item in plan:
+        n = item["week"]
+        topic = item["topic"]
+        w = query_one(
+            "SELECT id, title FROM weeks WHERE course_id = ? AND week_number = ?",
+            (course_id, n),
+        )
+        title = week_title(n, topic)
+        if w:
+            # Keep custom teacher titles if already specific; otherwise update
+            if not w["title"] or w["title"] == f"Week {n}" or w["title"].startswith(
+                "Week 1: Getting"
+            ):
+                execute(
+                    "UPDATE weeks SET title = ?, is_published = 1 WHERE id = ?",
+                    (title, w["id"]),
+                )
+            week_id = w["id"]
+        else:
+            cur = execute(
+                """INSERT INTO weeks (course_id, week_number, title, is_published)
+                   VALUES (?,?,?,1)""",
+                (course_id, n, title),
+            )
+            week_id = cur.lastrowid
+
+        _seed_or_refresh_week(
+            week_id, course_title, n, total, topic, teacher_id, now
+        )
+
+    # Hide extra weeks beyond curriculum length (if older DB had only placeholders extras — rare)
+    # Publish only up to total; leave higher weeks unpublished if any leftover
+    extras = query_all(
+        "SELECT id, week_number FROM weeks WHERE course_id = ? AND week_number > ?",
+        (course_id, total),
+    )
+    for ex in extras:
+        execute("UPDATE weeks SET is_published = 0 WHERE id = ?", (ex["id"],))
 
 
 def ensure_course_catalog(teacher_id):
-    """Install / refresh the live course list (safe to run every boot)."""
+    """Install / refresh courses, week counts, notes, and assessments."""
     now = datetime.utcnow().isoformat(timespec="seconds")
     active_slugs = [row[0] for row in COURSE_CATALOG]
 
-    # Hide anything not in the current catalog
     if active_slugs:
         placeholders = ",".join("?" * len(active_slugs))
         execute(
@@ -404,58 +432,36 @@ def ensure_course_catalog(teacher_id):
             tuple(active_slugs),
         )
 
+    from curriculum import duration_label
+
     for slug, title, category, desc in COURSE_CATALOG:
+        full_desc = f"{desc} Duration: {duration_label(slug)}."
         row = query_one("SELECT id FROM courses WHERE slug = ?", (slug,))
         if row:
             execute(
                 """UPDATE courses SET title = ?, level = ?, description = ?, is_active = 1
                    WHERE id = ?""",
-                (title, category, desc, row["id"]),
+                (title, category, full_desc, row["id"]),
             )
             course_id = row["id"]
         else:
             cur = execute(
                 """INSERT INTO courses (slug, title, level, description, is_active)
                    VALUES (?,?,?,?,1)""",
-                (slug, title, category, desc),
+                (slug, title, category, full_desc),
             )
             course_id = cur.lastrowid
-            for n in range(1, 5):
-                execute(
-                    """INSERT INTO weeks (course_id, week_number, title, is_published)
-                       VALUES (?,?,?,1)""",
-                    (
-                        course_id,
-                        n,
-                        "Week 1: Getting Started" if n == 1 else f"Week {n}",
-                    ),
-                )
 
-        week_count = query_one(
-            "SELECT COUNT(*) AS c FROM weeks WHERE course_id = ?", (course_id,)
-        )["c"]
-        if week_count == 0:
-            for n in range(1, 5):
-                execute(
-                    """INSERT INTO weeks (course_id, week_number, title, is_published)
-                       VALUES (?,?,?,1)""",
-                    (
-                        course_id,
-                        n,
-                        "Week 1: Getting Started" if n == 1 else f"Week {n}",
-                    ),
-                )
+        ensure_course_weeks(course_id, slug, title, teacher_id, now)
 
-        _seed_week_one_content(slug, title, teacher_id, now)
-
-    # Demo teacher only: if they have no assignments yet, give two sample courses.
-    # Admin controls all further teacher → course assignments.
     has_any = query_one(
         "SELECT 1 FROM teacher_courses WHERE teacher_id = ? LIMIT 1", (teacher_id,)
     )
     if not has_any:
         for slug in ("office-ms-word", "graphic-coreldraw"):
-            c = query_one("SELECT id FROM courses WHERE slug = ? AND is_active = 1", (slug,))
+            c = query_one(
+                "SELECT id FROM courses WHERE slug = ? AND is_active = 1", (slug,)
+            )
             if c:
                 execute(
                     "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",

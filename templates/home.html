@@ -9,14 +9,14 @@
     class="hero-full__media"
     role="img"
     aria-label="Students learning digital skills"
-    style="background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&amp;fit=crop&amp;w=2200&amp;q=80');"
+    style="background-image: url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&amp;fit=crop&amp;w=2200&amp;q=80');"
   ></div>
   <div class="hero-full__veil"></div>
   <div class="hero-full__copy">
     <p class="hero-full__brand">CloudCity Academy</p>
     <h1>Train for the skill you need next.</h1>
     <p class="hero-full__lead">
-      From Office and design to Python, Android, web and AI — weekly lessons, real practice, one certificate when you finish the course.
+      Office tracks finish in one month. Other paths run three to six months — weekly lessons, practice, and a certificate when you complete every week.
     </p>
     <div class="hero-actions">
       <a class="btn btn-light" href="{{ url_for('register') }}">Enrol in a course</a>
@@ -41,7 +41,7 @@
         style="background-image: url('{{ course_images.get(c.slug, '') }}');"
       ></div>
       <div class="path-card__body">
-        <p class="path-card__tag">{{ category_labels.get(c.level, c.level) }}</p>
+        <p class="path-card__tag">{{ category_labels.get(c.level, c.level) }}{% if c.duration %} · {{ c.duration }}{% endif %}</p>
         <h3 class="path-card__title">{{ c.title }}</h3>
         <p class="path-card__desc">{{ c.description }}</p>
         <a class="text-link path-card__cta" href="{{ url_for('register') }}?course={{ c.id }}">Select this course</a>
