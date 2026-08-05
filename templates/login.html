@@ -1,18 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Sign in — {{ ACADEMY_NAME }}{% endblock %}
+{% block title %}{% if staff %}Staff login{% else %}Sign in{% endif %} — {{ ACADEMY_NAME }}{% endblock %}
 {% block content %}
 <div class="auth-shell">
+  {% if staff %}
+  <h1>Staff login</h1>
+  <p class="sub">Admin and teacher accounts open their dashboards after sign in. Students should use student register / sign in.</p>
+  <div class="panel" style="margin-bottom:1rem;box-shadow:none">
+    <p class="muted" style="margin:0 0 0.5rem"><strong>Demo staff accounts</strong> (change passwords after first use)</p>
+    <p class="muted" style="margin:0">Admin: <code>admin@cloudcity.local</code> · <code>Admin123!</code></p>
+    <p class="muted" style="margin:0.35rem 0 0">Teacher: <code>teacher@cloudcity.local</code> · <code>Teacher123!</code></p>
+  </div>
+  {% else %}
   <h1>Sign in</h1>
-  <p class="sub">Students, teachers, and admin use the same door — access follows your role.</p>
+  <p class="sub">Students sign in here. Staff (admin / teacher) can use <a href="{{ url_for('staff_login') }}">Staff login</a>.</p>
+  {% endif %}
   <form class="form" method="post">
     <label>Email
-      <input type="email" name="email" required autocomplete="username">
+      <input type="email" name="email" required autocomplete="username"
+             value="{{ 'admin@cloudcity.local' if staff else '' }}">
     </label>
     <label>Password
       <input type="password" name="password" required autocomplete="current-password">
     </label>
-    <button class="btn" type="submit">Enter academy</button>
+    <button class="btn" type="submit">{% if staff %}Enter staff dashboard{% else %}Enter academy{% endif %}</button>
   </form>
+  {% if staff %}
+  <p class="muted" style="margin-top:1rem">Student? <a href="{{ url_for('register') }}">Register free</a> or <a href="{{ url_for('login') }}">Student sign in</a></p>
+  {% else %}
   <p class="muted" style="margin-top:1rem">New student? <a href="{{ url_for('register') }}">Register free</a></p>
+  {% endif %}
 </div>
 {% endblock %}

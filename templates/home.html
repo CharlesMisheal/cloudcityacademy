@@ -10,7 +10,31 @@
   </p>
   <div class="hero-actions">
     <a class="btn" href="{{ url_for('register') }}">Register free</a>
-    <a class="btn btn-ghost" href="{{ url_for('login') }}">Sign in</a>
+    <a class="btn btn-ghost" href="{{ url_for('login') }}">Student sign in</a>
+    <a class="btn btn-ghost" href="{{ url_for('staff_login') }}">Staff login</a>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Staff dashboards</h2>
+  <p>Teachers and admins do not register on this page. Use Staff login — your role opens the right dashboard.</p>
+  <div class="course-list">
+    <article class="course-row">
+      <div>
+        <div class="tag">Admin</div>
+        <h3>Admin dashboard</h3>
+        <p>Students, weekly assessments, end-of-course certificates.</p>
+      </div>
+      <a class="btn" href="{{ url_for('staff_login') }}">Staff login</a>
+    </article>
+    <article class="course-row">
+      <div>
+        <div class="tag">Teacher</div>
+        <h3>Teacher dashboard</h3>
+        <p>Notes, examples, question bank, and review student work.</p>
+      </div>
+      <a class="btn btn-ghost" href="{{ url_for('staff_login') }}">Staff login</a>
+    </article>
   </div>
 </section>
 

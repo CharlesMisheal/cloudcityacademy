@@ -196,6 +196,14 @@ def register_routes(app: Flask):
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
+        return _login_view(staff_mode=False)
+
+    @app.route("/staff", methods=["GET", "POST"])
+    def staff_login():
+        """Staff entry: admin & teacher dashboards after successful login."""
+        return _login_view(staff_mode=True)
+
+    def _login_view(staff_mode=False):
         if g.user:
             return redirect(url_for("dashboard"))
         if request.method == "POST":
@@ -205,14 +213,28 @@ def register_routes(app: Flask):
                 "SELECT * FROM users WHERE email = ? AND is_active = 1", (email,)
             )
             if user and check_password_hash(user["password_hash"], password):
+                if staff_mode and user["role"] == "student":
+                    flash(
+                        "That account is a student account. Use Student sign in, or register free.",
+                        "warn",
+                    )
+                    return render_template("login.html", staff=staff_mode)
+                if not staff_mode and user["role"] in ("admin", "teacher"):
+                    # Still allow staff on /login — send them to their dashboard
+                    session["user_id"] = user["id"]
+                    flash(f"Welcome back, {user['full_name'].split()[0]}.", "ok")
+                    return redirect(url_for("dashboard"))
                 session["user_id"] = user["id"]
                 flash(f"Welcome back, {user['full_name'].split()[0]}.", "ok")
                 nxt = request.args.get("next")
                 if nxt:
                     return redirect(nxt)
                 return redirect(url_for("dashboard"))
-            flash("Invalid email or password.", "error")
-        return render_template("login.html")
+            flash(
+                "Invalid email or password. Staff demo: admin@cloudcity.local / Admin123!",
+                "error",
+            )
+        return render_template("login.html", staff=staff_mode)
 
     @app.route("/logout")
     def logout():

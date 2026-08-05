@@ -158,124 +158,142 @@ def init_db():
     seed_if_empty()
 
 
-def seed_if_empty():
-    if query_one("SELECT id FROM users WHERE role = 'admin'"):
-        return
+def ensure_staff_user(full_name, email, password, role):
+    """Create staff account if missing (never overwrites an existing password)."""
+    existing = query_one("SELECT id FROM users WHERE email = ?", (email,))
+    if existing:
+        return existing["id"]
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    cur = execute(
+        """INSERT INTO users (full_name, email, password_hash, role, is_active, created_at)
+           VALUES (?,?,?,?,1,?)""",
+        (full_name, email, generate_password_hash(password), role, now),
+    )
+    return cur.lastrowid
 
+
+def seed_if_empty():
+    """Seed courses + demo staff. Safe to call every boot."""
     now = datetime.utcnow().isoformat(timespec="seconds")
 
-    execute(
-        "INSERT INTO users (full_name, email, password_hash, role, is_active, created_at) VALUES (?,?,?,?,1,?)",
-        (
-            "CloudCity Admin",
-            "admin@cloudcity.local",
-            generate_password_hash("Admin123!"),
-            "admin",
-            now,
-        ),
+    admin_id = ensure_staff_user(
+        "CloudCity Admin",
+        "admin@cloudcity.local",
+        "Admin123!",
+        "admin",
     )
-    execute(
-        "INSERT INTO users (full_name, email, password_hash, role, is_active, created_at) VALUES (?,?,?,?,1,?)",
-        (
-            "Ada Teacher",
-            "teacher@cloudcity.local",
-            generate_password_hash("Teacher123!"),
-            "teacher",
-            now,
-        ),
+    teacher_id = ensure_staff_user(
+        "Ada Teacher",
+        "teacher@cloudcity.local",
+        "Teacher123!",
+        "teacher",
     )
-    teacher = query_one("SELECT id FROM users WHERE email = ?", ("teacher@cloudcity.local",))
 
-    courses = [
-        (
-            "python-beginners",
-            "Python Beginners",
-            "beginner",
-            "Foundations of Python for absolute beginners: syntax, data types, control flow, and practice.",
-        ),
-        (
-            "python-advanced",
-            "Python Advanced",
-            "advanced",
-            "Deeper Python: functions mastery, OOP, files, modules, and applied problem solving.",
-        ),
-    ]
-    for slug, title, level, desc in courses:
-        execute(
-            "INSERT INTO courses (slug, title, level, description, is_active) VALUES (?,?,?,?,1)",
-            (slug, title, level, desc),
-        )
-
-    for course in query_all("SELECT id, title FROM courses"):
-        execute(
-            "INSERT INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
-            (teacher["id"], course["id"]),
-        )
-        for n in range(1, 5):
+    if not query_one("SELECT id FROM courses LIMIT 1"):
+        courses = [
+            (
+                "python-beginners",
+                "Python Beginners",
+                "beginner",
+                "Foundations of Python for absolute beginners: syntax, data types, control flow, and practice.",
+            ),
+            (
+                "python-advanced",
+                "Python Advanced",
+                "advanced",
+                "Deeper Python: functions mastery, OOP, files, modules, and applied problem solving.",
+            ),
+        ]
+        for slug, title, level, desc in courses:
             execute(
-                "INSERT INTO weeks (course_id, week_number, title, is_published) VALUES (?,?,?,1)",
-                (course["id"], n, f"Week {n}: Getting Started" if n == 1 else f"Week {n}"),
+                "INSERT INTO courses (slug, title, level, description, is_active) VALUES (?,?,?,?,1)",
+                (slug, title, level, desc),
             )
 
-    # Seed beginner week 1 content
-    begin = query_one("SELECT id FROM courses WHERE slug = ?", ("python-beginners",))
-    week1 = query_one(
-        "SELECT id FROM weeks WHERE course_id = ? AND week_number = 1",
-        (begin["id"],),
-    )
-    execute(
-        """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
-           VALUES (?,?,?,?,?,?)""",
-        (
-            week1["id"],
-            teacher["id"],
-            "Hello, Python",
-            "Welcome to CloudCity Academy.\n\n"
-            "This week you will write your first programs: print messages, store values in variables, "
-            "and understand how Python runs line by line.\n\n"
-            "Focus on clarity. Small programs, run often.",
-            'print("Hello, CloudCity")\n\nname = "Ada"\nprint("Hello,", name)',
-            now,
-        ),
-    )
-    q_seed = [
-        (
-            "mcq",
-            "Which function displays text in Python?",
-            json.dumps(["echo()", "print()", "show()", "display()"]),
-            "print()",
-            2,
-            1,
-        ),
-        (
-            "mcq",
-            "Which symbol starts a comment in Python?",
-            json.dumps(["//", "/*", "#", "--"]),
-            "#",
-            2,
-            2,
-        ),
-        (
-            "subjective",
-            "In one or two sentences, explain what a variable is.",
-            None,
-            None,
-            3,
-            3,
-        ),
-        (
-            "upload",
-            "Upload a screenshot of your first print program running successfully.",
-            None,
-            None,
-            3,
-            4,
-        ),
-    ]
-    for qtype, prompt, options, correct, points, order in q_seed:
-        execute(
-            """INSERT INTO questions
-               (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
-               VALUES (?,?,?,?,?,?,?)""",
-            (week1["id"], qtype, prompt, options, correct, points, order),
+        for course in query_all("SELECT id FROM courses"):
+            execute(
+                "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
+                (teacher_id, course["id"]),
+            )
+            for n in range(1, 5):
+                execute(
+                    "INSERT INTO weeks (course_id, week_number, title, is_published) VALUES (?,?,?,1)",
+                    (
+                        course["id"],
+                        n,
+                        f"Week {n}: Getting Started" if n == 1 else f"Week {n}",
+                    ),
+                )
+
+        begin = query_one("SELECT id FROM courses WHERE slug = ?", ("python-beginners",))
+        week1 = query_one(
+            "SELECT id FROM weeks WHERE course_id = ? AND week_number = 1",
+            (begin["id"],),
         )
+        if week1 and not query_one("SELECT id FROM notes WHERE week_id = ?", (week1["id"],)):
+            execute(
+                """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
+                   VALUES (?,?,?,?,?,?)""",
+                (
+                    week1["id"],
+                    teacher_id,
+                    "Hello, Python",
+                    "Welcome to CloudCity Academy.\n\n"
+                    "This week you will write your first programs: print messages, store values in variables, "
+                    "and understand how Python runs line by line.\n\n"
+                    "Focus on clarity. Small programs, run often.",
+                    'print("Hello, CloudCity")\n\nname = "Ada"\nprint("Hello,", name)',
+                    now,
+                ),
+            )
+            q_seed = [
+                (
+                    "mcq",
+                    "Which function displays text in Python?",
+                    json.dumps(["echo()", "print()", "show()", "display()"]),
+                    "print()",
+                    2,
+                    1,
+                ),
+                (
+                    "mcq",
+                    "Which symbol starts a comment in Python?",
+                    json.dumps(["//", "/*", "#", "--"]),
+                    "#",
+                    2,
+                    2,
+                ),
+                (
+                    "subjective",
+                    "In one or two sentences, explain what a variable is.",
+                    None,
+                    None,
+                    3,
+                    3,
+                ),
+                (
+                    "upload",
+                    "Upload a screenshot of your first print program running successfully.",
+                    None,
+                    None,
+                    3,
+                    4,
+                ),
+            ]
+            for qtype, prompt, options, correct, points, order in q_seed:
+                execute(
+                    """INSERT INTO questions
+                       (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
+                       VALUES (?,?,?,?,?,?,?)""",
+                    (week1["id"], qtype, prompt, options, correct, points, order),
+                )
+    else:
+        # Keep teacher linked to all courses
+        for course in query_all("SELECT id FROM courses"):
+            execute(
+                "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
+                (teacher_id, course["id"]),
+            )
+
+    # silence unused if analysis tools complain about admin_id
+    _ = admin_id
