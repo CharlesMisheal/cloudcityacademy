@@ -19,9 +19,13 @@
   {% if course.certificate_issued_at %}
     <a class="btn" href="{{ url_for('student_certificate') }}">Download course certificate</a>
   {% elif complete %}
-    <span class="badge cert">Course complete — await end-of-course certificate</span>
+    <span class="badge cert">Course complete (≥ {{ pass_mark|int }}%) — await certificate</span>
   {% else %}
-    <span class="badge pending">{{ done_ids|length }}/{{ weeks|length }} weeks done · no weekly certificates</span>
+    <span class="badge pending">
+      {{ done_ids|length }}/{{ weeks|length }} weeks done
+      {% if score_pct is not none %} · overall {{ score_pct }}%{% endif %}
+      · need ≥ {{ pass_mark|int }}% for certificate
+    </span>
   {% endif %}
 </div>
 

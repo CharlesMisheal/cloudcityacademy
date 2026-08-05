@@ -23,6 +23,9 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = 60 * 60 * 12  # 12 hours
 
+    # End-of-course certificate: all weeks submitted + overall score >= this %
+    CERTIFICATE_PASS_PERCENT = float(os.environ.get("CLOUDCITY_CERT_PASS", "75"))
+
     # Academy brand (public free URL when deployed)
     ACADEMY_NAME = "CloudCity Academy"
     PUBLIC_HOST = "cloudcity.pythonanywhere.com"

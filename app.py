@@ -239,11 +239,34 @@ def week_progress(student_id: int, course_id: int):
     return weeks, done_ids
 
 
+def course_score_percent(student_id: int, course_id: int) -> float | None:
+    """Overall % = sum(score)/sum(max_score) across submitted weeks in the course."""
+    row = query_one(
+        """
+        SELECT COALESCE(SUM(a.score), 0) AS s, COALESCE(SUM(a.max_score), 0) AS m
+        FROM assessments a
+        JOIN weeks w ON w.id = a.week_id
+        WHERE a.student_id = ? AND w.course_id = ? AND w.is_published = 1
+        """,
+        (student_id, course_id),
+    )
+    if not row or not row["m"] or float(row["m"]) <= 0:
+        return None
+    return round(100.0 * float(row["s"]) / float(row["m"]), 1)
+
+
 def course_complete(student_id: int, course_id: int) -> bool:
+    """Eligible for end-of-course certificate: all published weeks done + pass mark."""
+    from flask import current_app
+
     weeks, done_ids = week_progress(student_id, course_id)
-    if not weeks:
+    if not weeks or not all(w["id"] in done_ids for w in weeks):
         return False
-    return all(w["id"] in done_ids for w in weeks)
+    pct = course_score_percent(student_id, course_id)
+    if pct is None:
+        return False
+    pass_mark = float(current_app.config.get("CERTIFICATE_PASS_PERCENT", 75))
+    return pct >= pass_mark
 
 
 def register_routes(app: Flask):
@@ -582,9 +605,12 @@ def register_routes(app: Flask):
         course = student_course(g.user["id"])
         catalog, images, labels, logo_slugs = _catalog_courses()
         weeks, done_ids, complete = [], set(), False
+        score_pct = None
+        pass_mark = float(app.config.get("CERTIFICATE_PASS_PERCENT", 75))
         if course:
             weeks, done_ids = week_progress(g.user["id"], course["id"])
             complete = course_complete(g.user["id"], course["id"])
+            score_pct = course_score_percent(g.user["id"], course["id"])
         else:
             flash("You are not enrolled in an active course. Contact admin.", "warn")
         return render_template(
@@ -593,6 +619,8 @@ def register_routes(app: Flask):
             weeks=weeks,
             done_ids=done_ids,
             complete=complete,
+            score_pct=score_pct,
+            pass_mark=pass_mark,
             catalog=catalog,
             course_images=images,
             category_labels=labels,
@@ -1297,10 +1325,21 @@ def register_routes(app: Flask):
 
             if action == "issue":
                 if not course_complete(enr["user_id"], enr["course_id"]):
-                    flash(
-                        f"{enr['full_name']} has not completed all weeks yet.",
-                        "error",
-                    )
+                    weeks, done = week_progress(enr["user_id"], enr["course_id"])
+                    pct = course_score_percent(enr["user_id"], enr["course_id"])
+                    pass_mark = float(app.config.get("CERTIFICATE_PASS_PERCENT", 75))
+                    all_weeks = bool(weeks) and len(done) == len(weeks)
+                    if not all_weeks:
+                        flash(
+                            f"{enr['full_name']} has not completed all weeks yet.",
+                            "error",
+                        )
+                    else:
+                        flash(
+                            f"{enr['full_name']} needs overall ≥ {pass_mark:g}% "
+                            f"(current: {pct if pct is not None else 0:g}%).",
+                            "error",
+                        )
                 else:
                     execute(
                         "UPDATE enrollments SET certificate_issued_at = ? WHERE id = ?",
@@ -1314,6 +1353,7 @@ def register_routes(app: Flask):
                 )
             return redirect(url_for("admin_certificates"))
 
+        pass_mark = float(app.config.get("CERTIFICATE_PASS_PERCENT", 75))
         rows = query_all(
             """
             SELECT e.*, u.full_name, u.email, c.title AS course_title, c.id AS course_id
@@ -1327,15 +1367,21 @@ def register_routes(app: Flask):
         enriched = []
         for r in rows:
             weeks, done = week_progress(r["user_id"], r["course_id"])
+            pct = course_score_percent(r["user_id"], r["course_id"])
             enriched.append(
                 {
                     **dict(r),
                     "weeks_total": len(weeks),
                     "weeks_done": len(done),
-                    "complete": bool(weeks) and len(done) == len(weeks),
+                    "score_pct": pct,
+                    "complete": course_complete(r["user_id"], r["course_id"]),
                 }
             )
-        return render_template("admin/certificates.html", enrollments=enriched)
+        return render_template(
+            "admin/certificates.html",
+            enrollments=enriched,
+            pass_mark=pass_mark,
+        )
 
     @app.errorhandler(403)
     def forbidden(_e):
