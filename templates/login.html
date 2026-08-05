@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if staff %}Staff{% else %}Sign in{% endif %} — {{ ACADEMY_NAME }}{% endblock %}
+{% block title %}{% if staff %}Staff{% else %}Student sign in{% endif %} — {{ ACADEMY_NAME }}{% endblock %}
 {% block body_class %}is-auth{% endblock %}
 {% block main_class %}main--flush{% endblock %}
 {% block content %}
@@ -14,31 +14,34 @@
     {% if staff %}
     <p class="eyebrow">Internal</p>
     <h1>Staff sign in</h1>
-    <p class="sub">For admins and teachers only.</p>
-    {% else %}
-    <p class="eyebrow">Students</p>
-    <h1>Welcome back</h1>
-    <p class="sub">Sign in to continue your course.</p>
-    {% endif %}
-
+    <p class="sub">Admins and teachers — email and password.</p>
     <form class="form" method="post">
       <label>Email
         <input type="email" name="email" required autocomplete="username"
-               value="{{ 'admin@cloudcity.local' if staff else '' }}">
+               value="admin@cloudcity.local">
       </label>
       <label>Password
         <input type="password" name="password" required autocomplete="current-password">
       </label>
-      <button class="btn" type="submit">{% if staff %}Continue{% else %}Sign in{% endif %}</button>
+      <button class="btn" type="submit">Continue</button>
     </form>
-
-    {% if staff %}
     <p class="staff-hint">
       Demo · admin@cloudcity.local / Admin123! · teacher@cloudcity.local / Teacher123!
     </p>
-    <p class="muted auth-switch">Student? <a href="{{ url_for('login') }}">Sign in here</a></p>
+    <p class="muted auth-switch">Student? <a href="{{ url_for('login') }}">Sign in with Student ID</a></p>
     {% else %}
-    <p class="muted auth-switch">New here? <a href="{{ url_for('register') }}">Enrol</a></p>
+    <p class="eyebrow">Students</p>
+    <h1>Sign in with Student ID</h1>
+    <p class="sub">Enter the ID your school gave you. Your course opens automatically — no password.</p>
+    <form class="form" method="post">
+      <label>Student ID
+        <input type="text" name="student_code" required autocomplete="username"
+               placeholder="e.g. STU-2026-0142" autocapitalize="characters">
+      </label>
+      <button class="btn" type="submit">Enter my course</button>
+    </form>
+    <p class="muted auth-switch">Don’t have an ID yet? Ask your admin to add you and assign your course.</p>
+    <p class="staff-hint">Demo Student ID · STU-DEMO-001</p>
     {% endif %}
   </div>
 </section>

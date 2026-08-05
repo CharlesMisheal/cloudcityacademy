@@ -199,6 +199,7 @@ def init_db():
             email TEXT NOT NULL UNIQUE COLLATE NOCASE,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL CHECK(role IN ('admin', 'teacher', 'student')),
+            student_code TEXT UNIQUE COLLATE NOCASE,
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL
         );
@@ -290,7 +291,29 @@ def init_db():
         """
     )
     db.commit()
+    _migrate_schema(db)
     seed_if_empty()
+
+
+def _migrate_schema(db):
+    """Additive column migrations for existing SQLite files."""
+    cols = {
+        row[1]
+        for row in db.execute("PRAGMA table_info(users)").fetchall()
+    }
+    if "student_code" not in cols:
+        db.execute("ALTER TABLE users ADD COLUMN student_code TEXT")
+        db.commit()
+    db.execute(
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_users_student_code
+           ON users(student_code) WHERE student_code IS NOT NULL AND student_code != ''"""
+    )
+    db.commit()
+
+
+def normalize_student_code(raw: str) -> str:
+    """School student IDs are compared without spaces; stored upper-case."""
+    return " ".join((raw or "").strip().split()).upper()
 
 
 def ensure_staff_user(full_name, email, password, role):
@@ -300,8 +323,8 @@ def ensure_staff_user(full_name, email, password, role):
         return existing["id"]
     now = datetime.utcnow().isoformat(timespec="seconds")
     cur = execute(
-        """INSERT INTO users (full_name, email, password_hash, role, is_active, created_at)
-           VALUES (?,?,?,?,1,?)""",
+        """INSERT INTO users (full_name, email, password_hash, role, student_code, is_active, created_at)
+           VALUES (?,?,?,?,NULL,1,?)""",
         (full_name, email, generate_password_hash(password), role, now),
     )
     return cur.lastrowid
@@ -452,4 +475,37 @@ def seed_if_empty():
         "teacher",
     )
     ensure_course_catalog(teacher_id)
+    _ensure_demo_student()
     _ = admin_id
+
+
+def _ensure_demo_student():
+    """Demo student ID for local / PA testing: STU-DEMO-001 → AI Engineer."""
+    code = "STU-DEMO-001"
+    if query_one("SELECT id FROM users WHERE student_code = ?", (code,)):
+        return
+    course = query_one(
+        "SELECT id FROM courses WHERE slug = 'ai-engineer' AND is_active = 1"
+    )
+    if not course:
+        course = query_one("SELECT id FROM courses WHERE is_active = 1 ORDER BY id LIMIT 1")
+    if not course:
+        return
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    email = f"{code.lower()}@id.cloudcity.local"
+    cur = execute(
+        """INSERT INTO users
+           (full_name, email, password_hash, role, student_code, is_active, created_at)
+           VALUES (?,?,?,'student',?,1,?)""",
+        (
+            "Demo Student",
+            email,
+            generate_password_hash(f"nologin-{code}"),
+            code,
+            now,
+        ),
+    )
+    execute(
+        "INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (?,?,?)",
+        (cur.lastrowid, course["id"], now),
+    )

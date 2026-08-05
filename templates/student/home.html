@@ -13,7 +13,7 @@
   <div>
     <p class="hero-kicker">{{ course.level }} track</p>
     <h1>{{ course.title }}</h1>
-    <p>Hello {{ current_user.full_name.split()[0] }}. Work week by week — notes, then your assessment.</p>
+    <p>Hello {{ current_user.full_name.split()[0] }}{% if current_user.student_code %} · ID {{ current_user.student_code }}{% endif %}. Work week by week — notes, then your assessment.</p>
   </div>
   {% if course.certificate_issued_at %}
     <a class="btn" href="{{ url_for('student_certificate') }}">Download certificate</a>

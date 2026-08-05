@@ -19,16 +19,16 @@
       Office, Graphic Design (AI), and Video Editing (AI) finish in one month. Longer tracks run three to six months — weekly lessons, practice, and a certificate when you complete every week.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-light" href="{{ url_for('register') }}">Enrol in a course</a>
-      <a class="btn btn-ghost-light" href="{{ url_for('login') }}">I already have an account</a>
+      <a class="btn btn-light" href="{{ url_for('login') }}">Sign in with Student ID</a>
+      <a class="btn btn-ghost-light" href="#courses">Browse courses</a>
     </div>
   </div>
 </section>
 
-<section class="band band--paths">
+<section class="band band--paths" id="courses">
   <div class="band__intro">
-    <h2>Find your course</h2>
-    <p>Each path is different. Pick the one you’re joining — you’ll get lessons for that skill only, week by week, until you complete the full certificate.</p>
+    <h2>Courses we run</h2>
+    <p>Your admin assigns a Student ID to one course. Sign in with that ID to open only the lessons and assessments for your course.</p>
   </div>
 
   <div class="path-grid path-grid--catalog">
@@ -44,7 +44,6 @@
         <p class="path-card__tag">{{ category_labels.get(c.level, c.level) }}{% if c.duration %} · {{ c.duration }}{% endif %}</p>
         <h3 class="path-card__title">{{ c.title }}</h3>
         <p class="path-card__desc">{{ c.description }}</p>
-        <a class="text-link path-card__cta" href="{{ url_for('register') }}?course={{ c.id }}">Select this course</a>
       </div>
     </article>
     {% else %}
@@ -64,7 +63,7 @@
     <div class="story__text">
       <h2>What each week looks like</h2>
       <p>Study the notes. Try the examples. Submit your weekly assessment — short answers, quizzes, and a screenshot of your work. Complete every week to unlock your end-of-course certificate.</p>
-      <a class="btn" href="{{ url_for('register') }}">Start enrolment</a>
+      <a class="btn" href="{{ url_for('login') }}">Sign in with Student ID</a>
     </div>
   </div>
 </section>

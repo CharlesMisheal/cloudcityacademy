@@ -7,6 +7,7 @@ Host on PythonAnywhere free: https://cloudcity.pythonanywhere.com
 from __future__ import annotations
 
 import json
+import secrets
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -28,8 +29,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from config import Config
-from db import close_db, execute, init_db, query_all, query_one
+from db import (
+    close_db,
+    execute,
+    init_db,
+    normalize_student_code,
+    query_all,
+    query_one,
+)
 from services.certificates import build_certificate_pdf
+
 
 
 def create_app():
@@ -262,60 +271,50 @@ def register_routes(app: Flask):
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
-        if g.user:
-            return redirect(url_for("dashboard"))
-        courses = query_all(
-            "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
+        """Public self-enrolment removed — admin issues Student IDs."""
+        flash(
+            "Enrolment is by Student ID only. Your school gives you a Student ID with your course assigned. "
+            "Use Sign in with that ID.",
+            "warn",
         )
-        selected_course = request.args.get("course") or request.form.get("course_id")
-        if request.method == "POST":
-            name = (request.form.get("full_name") or "").strip()
-            email = (request.form.get("email") or "").strip().lower()
-            password = request.form.get("password") or ""
-            course_id = request.form.get("course_id")
-
-            if not name or not email or len(password) < 6 or not course_id:
-                flash("Fill all fields. Password must be at least 6 characters.", "error")
-                return render_template(
-                    "register.html", courses=courses, selected_course=course_id
-                )
-
-            course = query_one(
-                "SELECT * FROM courses WHERE id = ? AND is_active = 1", (course_id,)
-            )
-            if not course:
-                flash("Choose a valid course.", "error")
-                return render_template(
-                    "register.html", courses=courses, selected_course=selected_course
-                )
-
-            if query_one("SELECT id FROM users WHERE email = ?", (email,)):
-                flash("That email is already registered. Sign in instead.", "error")
-                return render_template(
-                    "register.html", courses=courses, selected_course=course_id
-                )
-
-            cur = execute(
-                """INSERT INTO users (full_name, email, password_hash, role, is_active, created_at)
-                   VALUES (?,?,?,'student',1,?)""",
-                (name, email, generate_password_hash(password), now_iso()),
-            )
-            user_id = cur.lastrowid
-            execute(
-                "INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (?,?,?)",
-                (user_id, course["id"], now_iso()),
-            )
-            session["user_id"] = user_id
-            flash(f"Welcome to CloudCity — you joined {course['title']}.", "ok")
-            return redirect(url_for("student_home"))
-
-        return render_template(
-            "register.html", courses=courses, selected_course=selected_course
-        )
+        return redirect(url_for("login"))
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
-        return _login_view(staff_mode=False)
+        """Students sign in with Student ID only (no password)."""
+        if g.user:
+            return redirect(url_for("dashboard"))
+        if request.method == "POST":
+            code = normalize_student_code(request.form.get("student_code") or "")
+            if not code:
+                flash("Enter your Student ID.", "error")
+                return render_template("login.html", staff=False)
+            user = query_one(
+                """SELECT * FROM users
+                   WHERE student_code = ? AND role = 'student' AND is_active = 1""",
+                (code,),
+            )
+            if not user:
+                flash(
+                    "Student ID not found or inactive. Ask your admin to register you.",
+                    "error",
+                )
+                return render_template("login.html", staff=False)
+            course = student_course(user["id"])
+            if not course:
+                flash(
+                    "Your Student ID has no course yet. Contact admin.",
+                    "error",
+                )
+                return render_template("login.html", staff=False)
+            session["user_id"] = user["id"]
+            first = (user["full_name"] or "Student").split()[0]
+            flash(f"Welcome, {first}. You are in {course['title']}.", "ok")
+            nxt = request.args.get("next")
+            if nxt:
+                return redirect(nxt)
+            return redirect(url_for("student_home"))
+        return render_template("login.html", staff=False)
 
     @app.route("/staff", methods=["GET", "POST"])
     def staff_login():
@@ -331,29 +330,28 @@ def register_routes(app: Flask):
             user = query_one(
                 "SELECT * FROM users WHERE email = ? AND is_active = 1", (email,)
             )
-            if user and check_password_hash(user["password_hash"], password):
-                if staff_mode and user["role"] == "student":
-                    flash(
-                        "That account is a student account. Use student sign in, or enrol as a student.",
-                        "warn",
-                    )
-                    return render_template("login.html", staff=staff_mode)
-                if not staff_mode and user["role"] in ("admin", "teacher"):
-                    # Still allow staff on /login — send them to their dashboard
-                    session["user_id"] = user["id"]
-                    flash(f"Welcome back, {user['full_name'].split()[0]}.", "ok")
-                    return redirect(url_for("dashboard"))
+            if (
+                user
+                and user["role"] in ("admin", "teacher")
+                and check_password_hash(user["password_hash"], password)
+            ):
                 session["user_id"] = user["id"]
                 flash(f"Welcome back, {user['full_name'].split()[0]}.", "ok")
                 nxt = request.args.get("next")
                 if nxt:
                     return redirect(nxt)
                 return redirect(url_for("dashboard"))
-            flash(
-                "Invalid email or password. Staff demo: admin@cloudcity.local / Admin123!",
-                "error",
-            )
-        return render_template("login.html", staff=staff_mode)
+            if user and user["role"] == "student":
+                flash(
+                    "Students sign in with Student ID on the student page — not staff login.",
+                    "warn",
+                )
+            else:
+                flash(
+                    "Invalid staff email or password. Demo: admin@cloudcity.local / Admin123!",
+                    "error",
+                )
+        return render_template("login.html", staff=True)
 
     @app.route("/logout")
     def logout():
@@ -869,8 +867,9 @@ def register_routes(app: Flask):
                         flash("Email already exists.", "error")
                     else:
                         cur = execute(
-                            """INSERT INTO users (full_name, email, password_hash, role, is_active, created_at)
-                               VALUES (?,?,?,'teacher',1,?)""",
+                            """INSERT INTO users
+                               (full_name, email, password_hash, role, student_code, is_active, created_at)
+                               VALUES (?,?,?,'teacher',NULL,1,?)""",
                             (name, email, generate_password_hash(password), now_iso()),
                         )
                         tid = cur.lastrowid
@@ -880,6 +879,49 @@ def register_routes(app: Flask):
                                 (tid, cid),
                             )
                         flash("Teacher created with assigned courses.", "ok")
+            elif action == "add_student":
+                name = (request.form.get("full_name") or "").strip()
+                code = normalize_student_code(request.form.get("student_code") or "")
+                course_id = request.form.get("course_id")
+                if not name or not code or not course_id:
+                    flash("Name, Student ID, and course are required.", "error")
+                elif query_one(
+                    "SELECT id FROM users WHERE student_code = ?", (code,)
+                ):
+                    flash("That Student ID is already registered.", "error")
+                else:
+                    course = query_one(
+                        "SELECT id, title FROM courses WHERE id = ? AND is_active = 1",
+                        (course_id,),
+                    )
+                    if not course:
+                        flash("Choose a valid course.", "error")
+                    else:
+                        email = f"{code.lower().replace(' ', '')}@id.cloudcity.local"
+                        if query_one("SELECT id FROM users WHERE email = ?", (email,)):
+                            email = f"{code.lower()}.{secrets.token_hex(3)}@id.cloudcity.local"
+                        cur = execute(
+                            """INSERT INTO users
+                               (full_name, email, password_hash, role, student_code, is_active, created_at)
+                               VALUES (?,?,?,'student',?,1,?)""",
+                            (
+                                name,
+                                email,
+                                generate_password_hash(f"nologin-{secrets.token_hex(16)}"),
+                                code,
+                                now_iso(),
+                            ),
+                        )
+                        execute(
+                            """INSERT INTO enrollments (user_id, course_id, enrolled_at)
+                               VALUES (?,?,?)""",
+                            (cur.lastrowid, course["id"], now_iso()),
+                        )
+                        flash(
+                            f"Student {name} ({code}) enrolled in {course['title']}. "
+                            "They sign in with that Student ID only.",
+                            "ok",
+                        )
             elif action == "assign_courses":
                 tid = request.form.get("teacher_id")
                 teacher = query_one(
@@ -900,7 +942,7 @@ def register_routes(app: Flask):
                             )
                     flash("Teacher course assignments updated.", "ok")
             elif action == "change_student_course":
-                sid = request.form.get("student_id")
+                sid = request.form.get("user_id")  # internal user pk
                 course_id = request.form.get("course_id")
                 student = query_one(
                     "SELECT id FROM users WHERE id = ? AND role = 'student'", (sid,)

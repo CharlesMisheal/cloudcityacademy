@@ -4,9 +4,32 @@
 <div class="page-head">
   <div>
     <h1>People</h1>
-    <p>Full access: assign teachers to courses, move students, enable or disable accounts.</p>
+    <p>Register students with a Student ID + course. Students sign in with that ID only. Teachers use email/password.</p>
   </div>
 </div>
+
+<section class="panel" style="margin-bottom:1rem">
+  <h2>Register student (Student ID → course)</h2>
+  <p class="muted">They sign in with the Student ID only. Course access is fixed to the course you choose here (you can move them later).</p>
+  <form class="form" method="post" style="max-width:36rem">
+    <input type="hidden" name="action" value="add_student">
+    <label>Full name
+      <input type="text" name="full_name" required placeholder="Ada Okoro">
+    </label>
+    <label>Student ID
+      <input type="text" name="student_code" required placeholder="STU-2026-0142" autocapitalize="characters">
+    </label>
+    <label>Course
+      <select name="course_id" required>
+        <option value="" disabled selected>Select course</option>
+        {% for c in courses %}
+        <option value="{{ c.id }}">{{ c.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Create student</button>
+  </form>
+</section>
 
 <section class="panel" style="margin-bottom:1rem">
   <h2>All users</h2>
@@ -15,7 +38,7 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Email</th>
+          <th>Student ID / Email</th>
           <th>Role</th>
           <th>Course / assignments</th>
           <th>Status</th>
@@ -26,7 +49,13 @@
         {% for u in users %}
         <tr>
           <td>{{ u.full_name }}</td>
-          <td>{{ u.email }}</td>
+          <td>
+            {% if u.role == 'student' %}
+              <strong>{{ u.student_code or '—' }}</strong>
+            {% else %}
+              {{ u.email }}
+            {% endif %}
+          </td>
           <td>{{ u.role }}</td>
           <td>
             {% if u.role == 'student' %}
@@ -112,14 +141,14 @@
 
 <section class="panel" style="margin-top:1rem">
   <h2>Move student to a course</h2>
-  <p class="muted">Students only take assessments for their enrolled course.</p>
+  <p class="muted">Changes which course their Student ID unlocks.</p>
   <form class="form" method="post" style="max-width:36rem">
     <input type="hidden" name="action" value="change_student_course">
     <label>Student
-      <select name="student_id" required>
+      <select name="user_id" required>
         <option value="" disabled selected>Select student</option>
         {% for s in students %}
-        <option value="{{ s.id }}">{{ s.full_name }} — {{ s.email }}{% if s.course_title %} ({{ s.course_title }}){% endif %}</option>
+        <option value="{{ s.id }}">{{ s.student_code or '—' }} — {{ s.full_name }}{% if s.course_title %} ({{ s.course_title }}){% endif %}</option>
         {% endfor %}
       </select>
     </label>
