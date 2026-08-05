@@ -6,13 +6,16 @@
   <title>{% block title %}{{ ACADEMY_NAME }}{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-  <header class="site-header">
-    <a class="brand" href="{{ url_for('home') if not current_user else url_for('dashboard') }}">Cloud<span>City</span> Academy</a>
-    <nav class="nav">
+<body class="{% block body_class %}{% endblock %}">
+  <header class="site-header{% if self.body_class() and 'is-landing' in self.body_class() %} site-header--over{% endif %}">
+    <a class="brand" href="{{ url_for('home') if not current_user else url_for('dashboard') }}">
+      Cloud<span>City</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
       {% if current_user %}
         {% if current_user.role == 'student' %}
           <a href="{{ url_for('student_home') }}">My course</a>
@@ -28,9 +31,8 @@
         {% endif %}
         <a href="{{ url_for('logout') }}">Sign out</a>
       {% else %}
-        <a href="{{ url_for('login') }}">Student sign in</a>
-        <a href="{{ url_for('staff_login') }}">Staff login</a>
-        <a class="btn btn-sm" href="{{ url_for('register') }}">Register free</a>
+        <a href="{{ url_for('login') }}">Sign in</a>
+        <a class="btn btn-sm" href="{{ url_for('register') }}">Join free</a>
       {% endif %}
     </nav>
   </header>
@@ -45,12 +47,23 @@
     {% endif %}
   {% endwith %}
 
-  <main>
+  <main class="{% block main_class %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
 
-  <p class="footer-note">
-    {{ ACADEMY_NAME }} · free Python learning · hosted at {{ PUBLIC_HOST }} · no paid tools required
-  </p>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <strong>CloudCity Academy</strong>
+        <span>Free Python for beginners &amp; advanced learners</span>
+      </div>
+      <div class="site-footer__meta">
+        <span>{{ PUBLIC_HOST }}</span>
+        {% if not current_user %}
+          <a class="staff-quiet" href="{{ url_for('staff_login') }}">Staff</a>
+        {% endif %}
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

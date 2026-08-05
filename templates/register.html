@@ -1,29 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Register — {{ ACADEMY_NAME }}{% endblock %}
+{% block title %}Join free — {{ ACADEMY_NAME }}{% endblock %}
+{% block body_class %}is-auth{% endblock %}
+{% block main_class %}main--flush{% endblock %}
 {% block content %}
-<div class="auth-shell">
-  <h1>Register free</h1>
-  <p class="sub">Create your student account and choose the course you are taking.</p>
-  <form class="form" method="post">
-    <label>Full name
-      <input type="text" name="full_name" required autocomplete="name">
-    </label>
-    <label>Email
-      <input type="email" name="email" required autocomplete="email">
-    </label>
-    <label>Password
-      <input type="password" name="password" required minlength="6" autocomplete="new-password">
-    </label>
-    <label>Course
-      <select name="course_id" required>
-        <option value="" disabled selected>Select a course</option>
-        {% for c in courses %}
-        <option value="{{ c.id }}">{{ c.title }} ({{ c.level }})</option>
-        {% endfor %}
-      </select>
-    </label>
-    <button class="btn" type="submit">Create student account</button>
-  </form>
-  <p class="muted" style="margin-top:1rem">Already enrolled? <a href="{{ url_for('login') }}">Sign in</a></p>
-</div>
+<section class="auth-layout">
+  <div
+    class="auth-layout__photo"
+    role="img"
+    aria-label="Laptop on a desk ready for coding practice"
+    style="background-image: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&amp;fit=crop&amp;w=1400&amp;q=80');"
+  ></div>
+  <div class="auth-layout__form">
+    <p class="eyebrow">Free enrolment</p>
+    <h1>Join CloudCity</h1>
+    <p class="sub">Create your student account and choose a course.</p>
+    <form class="form" method="post">
+      <label>Full name
+        <input type="text" name="full_name" required autocomplete="name">
+      </label>
+      <label>Email
+        <input type="email" name="email" required autocomplete="email">
+      </label>
+      <label>Password
+        <input type="password" name="password" required minlength="6" autocomplete="new-password">
+      </label>
+      <label>Course
+        <select name="course_id" required>
+          <option value="" disabled selected>Select a course</option>
+          {% for c in courses %}
+          <option value="{{ c.id }}">{{ c.title }} ({{ c.level }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="btn" type="submit">Create account</button>
+    </form>
+    <p class="muted auth-switch">Already enrolled? <a href="{{ url_for('login') }}">Sign in</a></p>
+  </div>
+</section>
 {% endblock %}

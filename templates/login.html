@@ -1,33 +1,45 @@
 {% extends "base.html" %}
-{% block title %}{% if staff %}Staff login{% else %}Sign in{% endif %} — {{ ACADEMY_NAME }}{% endblock %}
+{% block title %}{% if staff %}Staff{% else %}Sign in{% endif %} — {{ ACADEMY_NAME }}{% endblock %}
+{% block body_class %}is-auth{% endblock %}
+{% block main_class %}main--flush{% endblock %}
 {% block content %}
-<div class="auth-shell">
-  {% if staff %}
-  <h1>Staff login</h1>
-  <p class="sub">Admin and teacher accounts open their dashboards after sign in. Students should use student register / sign in.</p>
-  <div class="panel" style="margin-bottom:1rem;box-shadow:none">
-    <p class="muted" style="margin:0 0 0.5rem"><strong>Demo staff accounts</strong> (change passwords after first use)</p>
-    <p class="muted" style="margin:0">Admin: <code>admin@cloudcity.local</code> · <code>Admin123!</code></p>
-    <p class="muted" style="margin:0.35rem 0 0">Teacher: <code>teacher@cloudcity.local</code> · <code>Teacher123!</code></p>
+<section class="auth-layout">
+  <div
+    class="auth-layout__photo"
+    role="img"
+    aria-label="{% if staff %}Quiet workspace{% else %}Student studying with laptop{% endif %}"
+    style="background-image: url('{% if staff %}https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&amp;fit=crop&amp;w=1400&amp;q=80{% else %}https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&amp;fit=crop&amp;w=1400&amp;q=80{% endif %}');"
+  ></div>
+  <div class="auth-layout__form">
+    {% if staff %}
+    <p class="eyebrow">Internal</p>
+    <h1>Staff sign in</h1>
+    <p class="sub">For admins and teachers only.</p>
+    {% else %}
+    <p class="eyebrow">Students</p>
+    <h1>Welcome back</h1>
+    <p class="sub">Sign in to continue your Python course.</p>
+    {% endif %}
+
+    <form class="form" method="post">
+      <label>Email
+        <input type="email" name="email" required autocomplete="username"
+               value="{{ 'admin@cloudcity.local' if staff else '' }}">
+      </label>
+      <label>Password
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button class="btn" type="submit">{% if staff %}Continue{% else %}Sign in{% endif %}</button>
+    </form>
+
+    {% if staff %}
+    <p class="staff-hint">
+      Demo · admin@cloudcity.local / Admin123! · teacher@cloudcity.local / Teacher123!
+    </p>
+    <p class="muted auth-switch">Student? <a href="{{ url_for('login') }}">Sign in here</a></p>
+    {% else %}
+    <p class="muted auth-switch">New here? <a href="{{ url_for('register') }}">Join free</a></p>
+    {% endif %}
   </div>
-  {% else %}
-  <h1>Sign in</h1>
-  <p class="sub">Students sign in here. Staff (admin / teacher) can use <a href="{{ url_for('staff_login') }}">Staff login</a>.</p>
-  {% endif %}
-  <form class="form" method="post">
-    <label>Email
-      <input type="email" name="email" required autocomplete="username"
-             value="{{ 'admin@cloudcity.local' if staff else '' }}">
-    </label>
-    <label>Password
-      <input type="password" name="password" required autocomplete="current-password">
-    </label>
-    <button class="btn" type="submit">{% if staff %}Enter staff dashboard{% else %}Enter academy{% endif %}</button>
-  </form>
-  {% if staff %}
-  <p class="muted" style="margin-top:1rem">Student? <a href="{{ url_for('register') }}">Register free</a> or <a href="{{ url_for('login') }}">Student sign in</a></p>
-  {% else %}
-  <p class="muted" style="margin-top:1rem">New student? <a href="{{ url_for('register') }}">Register free</a></p>
-  {% endif %}
-</div>
+</section>
 {% endblock %}
