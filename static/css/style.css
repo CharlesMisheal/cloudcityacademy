@@ -313,15 +313,16 @@ a.staff-quiet:hover {
 }
 
 /* ——— Course paths ——— */
-.band {
+.band--paths {
   background: var(--paper);
   color: var(--ink);
-  padding: clamp(3rem, 8vw, 5.5rem) clamp(1.25rem, 6vw, 4.5rem);
+  padding: clamp(3rem, 8vw, 5.5rem) clamp(1.25rem, 5vw, 3rem);
 }
 
 .band__intro {
-  max-width: 36rem;
-  margin-bottom: 2rem;
+  max-width: 40rem;
+  margin: 0 auto 2.25rem;
+  text-align: center;
   animation: rise 0.8s var(--ease) both;
 }
 
@@ -329,47 +330,104 @@ a.staff-quiet:hover {
   font-family: var(--font-display);
   font-size: clamp(1.75rem, 3vw, 2.35rem);
   letter-spacing: -0.02em;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.55rem;
   font-weight: 600;
 }
 
 .band__intro p {
-  margin: 0;
+  margin: 0 auto;
   color: var(--ink-soft);
+  max-width: 38ch;
+  font-size: 1.02rem;
+  line-height: 1.55;
 }
 
 .path-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1.25rem, 3vw, 2rem);
+  align-items: stretch;
 }
 
 .path-grid--catalog {
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.35rem 1.25rem;
+  max-width: 1120px;
+  margin: 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
 }
 
-.path-item--compact {
-  grid-template-rows: 140px auto;
+/* Equal-height course cards — unique image per course */
+.path-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.25s var(--ease);
 }
 
-.path-item--compact .path-item__photo {
-  min-height: 140px;
+.path-card:hover {
+  border-color: rgba(11, 107, 117, 0.35);
+  transform: translateY(-2px);
 }
 
-.path-item--compact h3 {
-  font-size: 1.1rem;
+.path-card__photo {
+  flex: 0 0 auto;
+  height: 168px;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: #dfe6ea;
 }
 
-.path-item--compact p:not(.path-item__level) {
-  font-size: 0.88rem;
+.path-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 1.05rem 1.1rem 1.2rem;
+  min-height: 0;
+}
+
+.path-card__tag {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.path-card__title {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--ink);
+  min-height: 2.5em;
+}
+
+.path-card__desc {
+  margin: 0 0 1rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  flex: 1 1 auto;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+.path-card__cta {
+  margin-top: auto;
+  align-self: flex-start;
+}
 
+/* Legacy path-item (if used elsewhere) */
 .path-item {
   display: grid;
   grid-template-rows: 220px auto;
@@ -381,13 +439,6 @@ a.staff-quiet:hover {
   background-size: cover;
   background-position: center;
   min-height: 220px;
-  filter: saturate(0.92);
-  transition: transform 0.7s var(--ease), filter 0.4s ease;
-}
-
-.path-item:hover .path-item__photo {
-  transform: scale(1.02);
-  filter: saturate(1);
 }
 
 .path-item__body {
@@ -435,17 +486,16 @@ a.staff-quiet:hover {
 /* Story strip */
 .band--story {
   background: var(--mist);
-  padding-top: 0;
+  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 5vw, 3rem);
 }
 
 .story {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: clamp(1.5rem, 4vw, 3rem);
   align-items: center;
   max-width: 1080px;
   margin: 0 auto;
-  padding: clamp(3rem, 7vw, 5rem) 0;
 }
 
 .story__photo {
@@ -1062,6 +1112,12 @@ body.is-auth .flash-wrap {
   }
 }
 
+@media (max-width: 960px) {
+  .path-grid--catalog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 880px) {
   .path-grid,
   .path-grid--catalog,
@@ -1069,6 +1125,10 @@ body.is-auth .flash-wrap {
   .auth-layout,
   .split-2 {
     grid-template-columns: 1fr;
+  }
+
+  .path-card__title {
+    min-height: 0;
   }
 
   .auth-layout__photo {

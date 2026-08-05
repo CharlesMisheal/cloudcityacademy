@@ -244,12 +244,12 @@ def register_routes(app: Flask):
         courses = query_all(
             "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
         )
-        from db import CATEGORY_IMAGES, CATEGORY_LABELS
+        from db import CATEGORY_LABELS, COURSE_IMAGES
 
         return render_template(
             "home.html",
             courses=courses,
-            category_images=CATEGORY_IMAGES,
+            course_images=COURSE_IMAGES,
             category_labels=CATEGORY_LABELS,
         )
 
