@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ week.title }} — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">{{ course.title }} · Week {{ week.week_number }}</p>
+    <h1>{{ week.title }}</h1>
+    <p>Study the notes, then take the weekly assessment.</p>
+  </div>
+  <div class="stack-actions">
+    <a class="btn btn-ghost" href="{{ url_for('student_home') }}">All weeks</a>
+    {% if assessment %}
+      <a class="btn" href="{{ url_for('student_result', week_id=week.id) }}">View result</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('student_test', week_id=week.id) }}">Start weekly test</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="split-2">
+  <section class="panel">
+    <h2>{{ note.title if note else 'Lesson notes' }}</h2>
+    {% if note %}
+      <div class="prose">{{ note.content }}</div>
+    {% else %}
+      <p class="muted">Teacher notes will appear here.</p>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <h2>Examples</h2>
+    {% if note and note.examples %}
+      <pre class="code-block">{{ note.examples }}</pre>
+    {% else %}
+      <p class="muted">Code examples will appear here.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ ACADEMY_NAME }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('home') if not current_user else url_for('dashboard') }}">Cloud<span>City</span> Academy</a>
+    <nav class="nav">
+      {% if current_user %}
+        {% if current_user.role == 'student' %}
+          <a href="{{ url_for('student_home') }}">My course</a>
+        {% elif current_user.role == 'teacher' %}
+          <a href="{{ url_for('teacher_home') }}">Teaching</a>
+          <a href="{{ url_for('teacher_reviews') }}">Reviews</a>
+        {% elif current_user.role == 'admin' %}
+          <a href="{{ url_for('admin_home') }}">Admin</a>
+          <a href="{{ url_for('admin_users') }}">Users</a>
+          <a href="{{ url_for('admin_assessments') }}">Assessments</a>
+          <a href="{{ url_for('admin_certificates') }}">Certificates</a>
+          <a href="{{ url_for('teacher_home') }}">Content</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">Sign out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign in</a>
+        <a class="btn btn-sm" href="{{ url_for('register') }}">Register free</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <p class="footer-note">
+    {{ ACADEMY_NAME }} · free Python learning · hosted at {{ PUBLIC_HOST }} · no paid tools required
+  </p>
+</body>
+</html>

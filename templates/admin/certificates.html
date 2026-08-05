@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Certificates — Admin{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>End-of-course certificates</h1>
+    <p>Issue only when a student has completed every published week. Print as free PDF.</p>
+  </div>
+</div>
+
+<div class="panel table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Email</th>
+        <th>Course</th>
+        <th>Progress</th>
+        <th>Certificate</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in enrollments %}
+      <tr>
+        <td>{{ e.full_name }}</td>
+        <td>{{ e.email }}</td>
+        <td>{{ e.course_title }}</td>
+        <td>{{ e.weeks_done }}/{{ e.weeks_total }}{% if e.complete %} · ready{% endif %}</td>
+        <td>
+          {% if e.certificate_issued_at %}
+            <span class="badge cert">Issued {{ e.certificate_issued_at[:10] }}</span>
+          {% else %}
+            <span class="badge pending">Not issued</span>
+          {% endif %}
+        </td>
+        <td class="stack-actions">
+          {% if not e.certificate_issued_at and e.complete %}
+          <form class="inline-form" method="post">
+            <input type="hidden" name="enrollment_id" value="{{ e.id }}">
+            <input type="hidden" name="action" value="issue">
+            <button class="btn btn-sm" type="submit">Issue</button>
+          </form>
+          {% endif %}
+          {% if e.certificate_issued_at %}
+          <form class="inline-form" method="post">
+            <input type="hidden" name="enrollment_id" value="{{ e.id }}">
+            <input type="hidden" name="action" value="download">
+            <button class="btn btn-sm btn-ghost" type="submit">PDF</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">No student enrollments yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

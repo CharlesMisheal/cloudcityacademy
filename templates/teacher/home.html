@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Teaching — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Teaching desk</h1>
+    <p>Prepare notes, examples, and weekly questions for your courses.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('teacher_reviews') }}">Review submissions</a>
+</div>
+
+<div class="course-list">
+  {% for c in courses %}
+  <article class="course-row">
+    <div>
+      <div class="tag">{{ c.level }}</div>
+      <h3>{{ c.title }}</h3>
+      <p>{{ c.description }}</p>
+    </div>
+    <a class="btn" href="{{ url_for('teacher_course', course_id=c.id) }}">Open weeks</a>
+  </article>
+  {% else %}
+  <p class="muted">No courses assigned yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

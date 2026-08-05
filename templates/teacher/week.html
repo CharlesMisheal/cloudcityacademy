@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Edit Week {{ week.week_number }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">{{ week.course_title }}</p>
+    <h1>Week {{ week.week_number }}: {{ week.title }}</h1>
+    <p>Notes + examples for students. Questions power the weekly test.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('teacher_course', course_id=week.course_id) }}">Back</a>
+</div>
+
+<div class="split-2">
+  <section class="panel">
+    <h2>Lesson notes</h2>
+    <form class="form" method="post">
+      <input type="hidden" name="action" value="save_note">
+      <label>Title
+        <input type="text" name="title" value="{{ note.title if note else '' }}" required>
+      </label>
+      <label>Content
+        <textarea name="content" required>{{ note.content if note else '' }}</textarea>
+      </label>
+      <label>Code examples
+        <textarea name="examples" class="code-like">{{ note.examples if note else '' }}</textarea>
+      </label>
+      <button class="btn" type="submit">Save notes</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Add question</h2>
+    <form class="form" method="post">
+      <input type="hidden" name="action" value="add_question">
+      <label>Type
+        <select name="qtype" required>
+          <option value="mcq">Objective (MCQ)</option>
+          <option value="subjective">Subjective</option>
+          <option value="upload">Screenshot upload</option>
+        </select>
+      </label>
+      <label>Prompt
+        <textarea name="prompt" required></textarea>
+      </label>
+      <label>MCQ options (one per line)
+        <textarea name="options" placeholder="print()&#10;echo()&#10;show()"></textarea>
+      </label>
+      <label>Correct option (must match one line exactly)
+        <input type="text" name="correct_option">
+      </label>
+      <label>Points
+        <input type="number" name="points" value="2" min="1" max="50">
+      </label>
+      <button class="btn" type="submit">Add to bank</button>
+    </form>
+  </section>
+</div>
+
+<section class="panel" style="margin-top:1rem">
+  <h2>Question bank</h2>
+  {% for q in questions %}
+  <div class="q-block">
+    <h3>{{ loop.index }}. [{{ q.qtype }}] {{ q.prompt }} <span class="muted">{{ q.points }} pts</span></h3>
+    {% if q.options %}
+      <p class="muted">Options: {{ q.options|join(' · ') }} · correct: {{ q.correct_option }}</p>
+    {% endif %}
+    <form class="inline-form" method="post" onsubmit="return confirm('Delete this question?')">
+      <input type="hidden" name="action" value="delete_question">
+      <input type="hidden" name="question_id" value="{{ q.id }}">
+      <button class="btn btn-sm btn-ghost" type="submit">Delete</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="muted">No questions yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

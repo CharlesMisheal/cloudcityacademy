@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Sign in — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <h1>Sign in</h1>
+  <p class="sub">Students, teachers, and admin use the same door — access follows your role.</p>
+  <form class="form" method="post">
+    <label>Email
+      <input type="email" name="email" required autocomplete="username">
+    </label>
+    <label>Password
+      <input type="password" name="password" required autocomplete="current-password">
+    </label>
+    <button class="btn" type="submit">Enter academy</button>
+  </form>
+  <p class="muted" style="margin-top:1rem">New student? <a href="{{ url_for('register') }}">Register free</a></p>
+</div>
+{% endblock %}

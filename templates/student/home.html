@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}My course — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+{% if not course %}
+<div class="page-head">
+  <div>
+    <h1>No course yet</h1>
+    <p>Ask an admin to enroll you.</p>
+  </div>
+</div>
+{% else %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">{{ course.level }} track</p>
+    <h1>{{ course.title }}</h1>
+    <p>Hello {{ current_user.full_name.split()[0] }}. Work week by week — notes, then your assessment.</p>
+  </div>
+  {% if course.certificate_issued_at %}
+    <a class="btn" href="{{ url_for('student_certificate') }}">Download certificate</a>
+  {% elif complete %}
+    <span class="badge cert">Eligible for certificate</span>
+  {% else %}
+    <span class="badge pending">{{ done_ids|length }}/{{ weeks|length }} weeks done</span>
+  {% endif %}
+</div>
+
+<div class="week-grid">
+  {% for w in weeks %}
+  <article class="week-item">
+    <div class="week-num">{{ '%02d'|format(w.week_number) }}</div>
+    <div>
+      <strong>{{ w.title }}</strong>
+      <div class="muted">
+        {% if w.id in done_ids %}
+          <span class="badge done">Submitted</span>
+        {% else %}
+          <span class="badge pending">Open</span>
+        {% endif %}
+      </div>
+    </div>
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('student_week', week_id=w.id) }}">Open</a>
+  </article>
+  {% else %}
+  <p class="muted">No published weeks yet.</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

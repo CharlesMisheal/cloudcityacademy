@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Weekly test — {{ week.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">Week {{ week.week_number }} assessment</p>
+    <h1>{{ week.title }}</h1>
+    <p>Answer every question. Upload a clear screenshot where requested. One submission only.</p>
+  </div>
+</div>
+
+<form class="panel form" method="post" enctype="multipart/form-data">
+  {% for q in questions %}
+  <div class="q-block">
+    <h3>{{ loop.index }}. {{ q.prompt }} <span class="muted">({{ q.points }} pts)</span></h3>
+
+    {% if q.qtype == 'mcq' %}
+      <div class="choices">
+        {% for opt in q.options %}
+        <label>
+          <input type="radio" name="q_{{ q.id }}" value="{{ opt }}" required>
+          <span>{{ opt }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    {% elif q.qtype == 'subjective' %}
+      <textarea name="q_{{ q.id }}" required placeholder="Write your answer…"></textarea>
+    {% elif q.qtype == 'upload' %}
+      <label>Screenshot of your work
+        <input type="file" name="q_{{ q.id }}_file" accept="image/*" required>
+      </label>
+      <label>Optional note
+        <input type="text" name="q_{{ q.id }}_note" placeholder="Brief description of what you built">
+      </label>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="muted">No questions yet. Check back after your teacher prepares them.</p>
+  {% endfor %}
+
+  {% if questions %}
+  <button class="btn" type="submit">Submit assessment</button>
+  {% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} — Teaching{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">{{ course.level }}</p>
+    <h1>{{ course.title }}</h1>
+    <p>Select a week to edit notes and the question bank.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('teacher_home') }}">All courses</a>
+</div>
+
+<div class="week-grid">
+  {% for w in weeks %}
+  <article class="week-item">
+    <div class="week-num">{{ '%02d'|format(w.week_number) }}</div>
+    <div><strong>{{ w.title }}</strong></div>
+    <a class="btn btn-sm" href="{{ url_for('teacher_week', week_id=w.id) }}">Edit</a>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Result — {{ week.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">Week {{ week.week_number }}</p>
+    <h1>Assessment result</h1>
+    <p>
+      Score: <strong>{{ '%.1f'|format(assessment.score) }}</strong> /
+      {{ '%.1f'|format(assessment.max_score) }}
+      · status {{ assessment.status }}
+    </p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('student_home') }}">Back to course</a>
+</div>
+
+<div class="panel">
+  {% for a in answers %}
+  <div class="q-block">
+    <h3>{{ a.prompt }}</h3>
+    <p class="muted">Type: {{ a.qtype }} · awarded {{ a.points_awarded }} / {{ a.points }}</p>
+    {% if a.qtype == 'mcq' %}
+      <p>Your answer: <strong>{{ a.selected_option or '—' }}</strong>
+        {% if a.is_correct == 1 %}<span class="badge done">correct</span>
+        {% elif a.is_correct == 0 %}<span class="badge pending">incorrect</span>{% endif %}
+      </p>
+    {% else %}
+      <div class="prose">{{ a.text_answer or '—' }}</div>
+    {% endif %}
+    {% if a.teacher_feedback %}
+      <p class="muted">Feedback: {{ a.teacher_feedback }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

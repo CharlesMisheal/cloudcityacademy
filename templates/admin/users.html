@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Users — Admin{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>People</h1>
+    <p>Students self-register. Teachers are created here (free accounts only).</p>
+  </div>
+</div>
+
+<div class="split-2">
+  <section class="panel">
+    <h2>All users</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Course</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>{{ u.full_name }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.role }}</td>
+            <td>{{ u.course_title or '—' }}</td>
+            <td>{{ 'active' if u.is_active else 'disabled' }}</td>
+            <td>
+              {% if u.id != current_user.id %}
+              <form class="inline-form" method="post">
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <button class="btn btn-sm btn-ghost" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Add teacher</h2>
+    <form class="form" method="post">
+      <input type="hidden" name="action" value="add_teacher">
+      <label>Full name
+        <input type="text" name="full_name" required>
+      </label>
+      <label>Email
+        <input type="email" name="email" required>
+      </label>
+      <label>Temp password
+        <input type="text" name="password" value="Teacher123!">
+      </label>
+      <label>Assign courses
+        {% for c in courses %}
+        <label style="font-weight:500;color:var(--ink)">
+          <input type="checkbox" name="course_ids" value="{{ c.id }}"> {{ c.title }}
+        </label>
+        {% endfor %}
+      </label>
+      <button class="btn" type="submit">Create teacher</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

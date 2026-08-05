@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Admin — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Admin overview</h1>
+    <p>Monitor the free academy — students, weekly submissions, end-of-course certificates.</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><strong>{{ stats.students }}</strong><span>Students</span></div>
+  <div class="stat"><strong>{{ stats.teachers }}</strong><span>Teachers</span></div>
+  <div class="stat"><strong>{{ stats.assessments }}</strong><span>Assessments</span></div>
+  <div class="stat"><strong>{{ stats.certs }}</strong><span>Certificates</span></div>
+</div>
+
+<div class="panel table-wrap">
+  <h2>Recent assessments</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Course</th>
+        <th>Week</th>
+        <th>Score</th>
+        <th>When</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in recent %}
+      <tr>
+        <td>{{ r.full_name }}</td>
+        <td>{{ r.course_title }}</td>
+        <td>W{{ r.week_number }}</td>
+        <td>{{ '%.1f'|format(r.score) }}/{{ '%.1f'|format(r.max_score) }}</td>
+        <td>{{ r.submitted_at[:16].replace('T',' ') }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">No assessments yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

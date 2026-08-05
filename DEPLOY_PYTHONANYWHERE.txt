@@ -1,0 +1,108 @@
+# CloudCity Academy — free deploy on PythonAnywhere (username: cloudcity)
+
+Public URL: https://cloudcity.pythonanywhere.com
+
+Do these steps in order. Stay on the free Beginner plan.
+
+-------------------------------------------------------
+STEP 1 — Create free account (if not done)
+-------------------------------------------------------
+1. Go to https://www.pythonanywhere.com/
+2. Sign up with username: cloudcity
+3. Choose Beginner (free) — skip any paid upgrades
+
+-------------------------------------------------------
+STEP 2 — Upload the app
+-------------------------------------------------------
+Easiest:
+
+1. On your PC, zip the folder:
+   PythonClass/cloudcity  →  cloudcity.zip
+   (or use cloudcity_upload.zip if we created it for you)
+
+2. On PythonAnywhere → Files tab
+3. Upload cloudcity.zip into /home/cloudcity/
+4. Open a Bash console and run:
+
+   cd ~
+   unzip -o cloudcity.zip
+   # If unzip created nested cloudcity/cloudcity, move files so this works:
+   # ls ~/cloudcity/app.py   should show app.py
+
+   You need this structure:
+   /home/cloudcity/cloudcity/app.py
+   /home/cloudcity/cloudcity/wsgi.py
+   /home/cloudcity/cloudcity/templates/...
+   /home/cloudcity/cloudcity/static/...
+   /home/cloudcity/cloudcity/requirements.txt
+
+-------------------------------------------------------
+STEP 3 — Install free Python packages
+-------------------------------------------------------
+In Bash console:
+
+  cd ~/cloudcity
+  python3 -m pip install --user -r requirements.txt
+
+Wait until finished (Flask, Werkzeug, reportlab).
+
+-------------------------------------------------------
+STEP 4 — Create free web app
+-------------------------------------------------------
+1. Web tab → Add a new web app
+2. Next → Manual configuration (not Flask wizard — more reliable)
+3. Python version: newest free 3.x (e.g. 3.10 or 3.11)
+4. Next → Finish
+
+-------------------------------------------------------
+STEP 5 — Point the app at CloudCity
+-------------------------------------------------------
+On the Web tab for cloudcity.pythonanywhere.com:
+
+A) Source code:
+   /home/cloudcity/cloudcity
+
+B) Working directory:
+   /home/cloudcity/cloudcity
+
+C) WSGI configuration file → click the link → delete the demo code
+   and paste everything from pythonanywhere_wsgi.py
+   (or paste this):
+
+import sys
+path = "/home/cloudcity/cloudcity"
+if path not in sys.path:
+    sys.path.insert(0, path)
+from app import app as application
+
+D) Static files (optional but recommended):
+   URL:  /static/
+   Directory:  /home/cloudcity/cloudcity/static
+
+E) Green Reload button
+
+-------------------------------------------------------
+STEP 6 — Open the site
+-------------------------------------------------------
+Visit: https://cloudcity.pythonanywhere.com
+
+Demo logins (change passwords after first use):
+  Admin:   admin@cloudcity.local   /  Admin123!
+  Teacher: teacher@cloudcity.local /  Teacher123!
+  Students: use Register free on the homepage
+
+-------------------------------------------------------
+If you see an error
+-------------------------------------------------------
+Web tab → Log files → Error log
+Common fixes:
+  - path wrong (app.py not found) → fix sys.path path
+  - ModuleNotFoundError flask → rerun pip install --user -r requirements.txt
+  - 500 on first load → reload once more after packages install
+
+-------------------------------------------------------
+Money rules
+-------------------------------------------------------
+- Stay on free Beginner plan
+- Ignore “upgrade for always-on / custom domain”
+- Free site may sleep when idle; first open can take ~20–40s — still free

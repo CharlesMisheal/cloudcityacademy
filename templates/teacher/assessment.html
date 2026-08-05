@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Review — {{ assessment.full_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">{{ assessment.course_title }} · Week {{ assessment.week_number }}</p>
+    <h1>{{ assessment.full_name }}</h1>
+    <p>Submitted {{ assessment.submitted_at }} · current score {{ '%.1f'|format(assessment.score) }}/{{ '%.1f'|format(assessment.max_score) }}</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('teacher_reviews') }}">All reviews</a>
+</div>
+
+<form class="panel form" method="post">
+  {% for a in answers %}
+  <div class="q-block">
+    <h3>{{ a.prompt }} <span class="muted">[{{ a.qtype }} · max {{ a.max_points }}]</span></h3>
+    {% if a.qtype == 'mcq' %}
+      <p>Selected: <strong>{{ a.selected_option or '—' }}</strong></p>
+    {% else %}
+      <div class="prose">{{ a.text_answer or '—' }}</div>
+    {% endif %}
+    {% if uploads_map.get(a.id) %}
+      <p>
+        <a href="{{ url_for('static', filename='uploads/' + uploads_map[a.id].stored_name) }}" target="_blank" rel="noopener">
+          View screenshot ({{ uploads_map[a.id].original_name }})
+        </a>
+      </p>
+    {% endif %}
+    <label>Points awarded
+      <input type="number" step="0.5" min="0" max="{{ a.max_points }}" name="points_{{ a.id }}" value="{{ a.points_awarded }}">
+    </label>
+    <label>Feedback
+      <input type="text" name="feedback_{{ a.id }}" value="{{ a.teacher_feedback or '' }}">
+    </label>
+  </div>
+  {% endfor %}
+  <button class="btn" type="submit">Save review</button>
+</form>
+{% endblock %}

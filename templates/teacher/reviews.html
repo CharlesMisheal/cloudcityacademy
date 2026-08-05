@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Reviews — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Submission reviews</h1>
+    <p>Mark subjective answers and check student screenshots.</p>
+  </div>
+</div>
+
+<div class="panel table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Course</th>
+        <th>Week</th>
+        <th>Score</th>
+        <th>Submitted</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assessments %}
+      <tr>
+        <td>{{ a.full_name }}</td>
+        <td>{{ a.course_title }}</td>
+        <td>W{{ a.week_number }} — {{ a.week_title }}</td>
+        <td>{{ '%.1f'|format(a.score) }}/{{ '%.1f'|format(a.max_score) }}</td>
+        <td>{{ a.submitted_at[:10] }}</td>
+        <td><a class="btn btn-sm btn-ghost" href="{{ url_for('teacher_assessment', assessment_id=a.id) }}">Open</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">No submissions yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

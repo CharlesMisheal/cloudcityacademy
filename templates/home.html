@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ ACADEMY_NAME }} — Python for beginners & advanced{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="hero-kicker">Python Academy</p>
+  <h1>CloudCity Academy</h1>
+  <p class="lead">
+    A free classroom for beginners and advanced Python learners.
+    Weekly lessons, graded practice, and an end-of-course certificate.
+  </p>
+  <div class="hero-actions">
+    <a class="btn" href="{{ url_for('register') }}">Register free</a>
+    <a class="btn btn-ghost" href="{{ url_for('login') }}">Sign in</a>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Choose your path</h2>
+  <p>Self-register, pick a course, and start weekly learning. No payment. No premium upsell.</p>
+  <div class="course-list">
+    {% for c in courses %}
+    <article class="course-row">
+      <div>
+        <div class="tag">{{ c.level }}</div>
+        <h3>{{ c.title }}</h3>
+        <p>{{ c.description }}</p>
+      </div>
+      <a class="btn btn-ghost" href="{{ url_for('register') }}">Join free</a>
+    </article>
+    {% else %}
+    <p class="muted">Courses will appear here once set up.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

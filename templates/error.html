@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <h1>{{ code }}</h1>
+  <p class="sub">{{ message }}</p>
+  <a class="btn" href="{{ url_for('home') }}">Back home</a>
+</div>
+{% endblock %}
