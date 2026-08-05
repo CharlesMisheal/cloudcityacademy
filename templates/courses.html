@@ -5,11 +5,11 @@
   <div>
     <h1>All courses</h1>
     <p>
-      Browse every programme we run.
+      Click any course for details.
       {% if current_user and current_user.role == 'student' %}
-        Your Student ID unlocks lessons only for your assigned course (marked below).
+        Your Student ID unlocks lessons for your assigned course only (marked below).
       {% else %}
-        Sign in with your Student ID to open the course your CloudCity Admin assigned to you.
+        Sign in with the Student ID your CloudCity Admin assigned to open lessons.
       {% endif %}
     </p>
   </div>
@@ -22,7 +22,8 @@
 
 <div class="path-grid path-grid--catalog">
   {% for c in courses %}
-  <article class="path-card{% if my_course_id and c.id == my_course_id %} path-card--mine{% endif %}">
+  <a class="path-card{% if my_course_id and c.id == my_course_id %} path-card--mine{% endif %}"
+     href="{% if my_course_id and c.id == my_course_id %}{{ url_for('student_home') }}{% else %}{{ url_for('course_detail', slug=c.slug) }}{% endif %}">
     <div
       class="path-card__photo{% if c.slug in logo_slugs %} path-card__photo--logo path-card__photo--{{ c.slug }}{% endif %}"
       role="img"
@@ -38,13 +39,15 @@
       </p>
       <h3 class="path-card__title">{{ c.title }}</h3>
       <p class="path-card__desc">{{ c.description }}</p>
-      {% if my_course_id and c.id == my_course_id %}
-        <a class="text-link path-card__cta" href="{{ url_for('student_home') }}">Open my lessons</a>
-      {% elif current_user and current_user.role == 'student' %}
-        <p class="muted path-card__cta">View only — not assigned to your Student ID</p>
-      {% endif %}
+      <span class="text-link path-card__cta">
+        {% if my_course_id and c.id == my_course_id %}
+          Open my lessons
+        {% else %}
+          View course
+        {% endif %}
+      </span>
     </div>
-  </article>
+  </a>
   {% else %}
   <p class="muted">No courses published yet.</p>
   {% endfor %}

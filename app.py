@@ -297,6 +297,34 @@ def register_routes(app: Flask):
             my_course_id=my_course_id,
         )
 
+    @app.route("/course/<slug>")
+    def course_detail(slug):
+        """Public course overview; lessons unlock only when Student ID is assigned to it."""
+        from curriculum import duration_label, weeks_for
+        from db import CATEGORY_LABELS, COURSE_IMAGES, COURSE_LOGO_SLUGS
+
+        course = query_one(
+            "SELECT * FROM courses WHERE slug = ? AND is_active = 1", (slug,)
+        )
+        if not course:
+            abort(404)
+        my_course = None
+        is_mine = False
+        if g.user and g.user["role"] == "student":
+            my_course = student_course(g.user["id"])
+            is_mine = bool(my_course and my_course["id"] == course["id"])
+        return render_template(
+            "course_detail.html",
+            course=course,
+            duration=duration_label(course["slug"]),
+            week_count=weeks_for(course["slug"]),
+            course_image=COURSE_IMAGES.get(course["slug"], ""),
+            category_label=CATEGORY_LABELS.get(course["level"], course["level"]),
+            is_logo=course["slug"] in COURSE_LOGO_SLUGS,
+            is_mine=is_mine,
+            my_course=my_course,
+        )
+
     @app.route("/register", methods=["GET", "POST"])
     def register():
         """Public self-enrolment removed — admin issues Student IDs."""

@@ -54,7 +54,8 @@
   </div>
   <div class="path-grid path-grid--catalog">
     {% for c in catalog %}
-    <article class="path-card{% if course and c.id == course.id %} path-card--mine{% endif %}">
+    <a class="path-card{% if course and c.id == course.id %} path-card--mine{% endif %}"
+       href="{% if course and c.id == course.id %}{{ url_for('student_home') }}#weeks{% else %}{{ url_for('course_detail', slug=c.slug) }}{% endif %}">
       <div
         class="path-card__photo{% if c.slug in logo_slugs %} path-card__photo--logo path-card__photo--{{ c.slug }}{% endif %}"
         role="img"
@@ -70,13 +71,15 @@
         </p>
         <h3 class="path-card__title">{{ c.title }}</h3>
         <p class="path-card__desc">{{ c.description }}</p>
-        {% if course and c.id == course.id %}
-          <p class="muted path-card__cta">You have access — use the weeks above</p>
-        {% else %}
-          <p class="muted path-card__cta">Catalog only — not on your Student ID</p>
-        {% endif %}
+        <span class="text-link path-card__cta">
+          {% if course and c.id == course.id %}
+            Your lessons (above)
+          {% else %}
+            View course
+          {% endif %}
+        </span>
       </div>
-    </article>
+    </a>
     {% else %}
     <p class="muted">No courses listed yet.</p>
     {% endfor %}

@@ -460,6 +460,19 @@ a.staff-quiet:hover {
   border: 1px solid var(--line);
   overflow: hidden;
   transition: border-color 0.2s ease, transform 0.25s var(--ease);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+a.path-card:hover .path-card__title,
+a.path-card:focus-visible .path-card__title {
+  color: var(--teal-deep);
+}
+
+a.path-card:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
 
 .path-card:hover {
@@ -470,6 +483,27 @@ a.staff-quiet:hover {
 .path-card--mine {
   border-color: rgba(11, 107, 117, 0.55);
   box-shadow: 0 0 0 1px rgba(11, 107, 117, 0.12);
+}
+
+.course-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.course-detail__photo {
+  min-height: 220px;
+  border-radius: var(--radius);
+  background-size: cover;
+  background-position: center;
+  background-color: #dfe6ea;
+}
+
+@media (max-width: 720px) {
+  .course-detail {
+    grid-template-columns: 1fr;
+  }
 }
 
 .path-card__photo {

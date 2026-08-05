@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="hero-kicker">{{ category_label }}{% if duration %} · {{ duration }}{% endif %}</p>
+    <h1>{{ course.title }}</h1>
+    <p>{{ course.description }}</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('courses_catalog') }}">All courses</a>
+</div>
+
+<section class="panel course-detail">
+  <div
+    class="course-detail__photo{% if is_logo %} path-card__photo--logo path-card__photo--{{ course.slug }}{% endif %}"
+    role="img"
+    aria-label="{{ course.title }}"
+    style="background-image: url('{{ course_image }}');"
+  ></div>
+  <div class="course-detail__body">
+    <p><strong>{{ week_count }}</strong> weekly modules · certificate when you complete every week</p>
+    <p class="muted">
+      Lessons and assessments open when your <strong>CloudCity Admin</strong> assigns this course to your <strong>Student ID</strong>.
+      You cannot self-enrol by clicking a card alone.
+    </p>
+    {% if is_mine %}
+      <a class="btn" href="{{ url_for('student_home') }}">Open my lessons</a>
+    {% elif current_user and current_user.role == 'student' %}
+      <p class="muted">Your Student ID is assigned to <strong>{{ my_course.title if my_course else 'another course' }}</strong>.</p>
+      <a class="btn btn-ghost" href="{{ url_for('student_home') }}">Back to my course</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Sign in with Student ID</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

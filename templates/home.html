@@ -45,7 +45,8 @@
 
   <div class="path-grid path-grid--catalog">
     {% for c in courses %}
-    <article class="path-card{% if my_course_id and c.id == my_course_id %} path-card--mine{% endif %}">
+    <a class="path-card{% if my_course_id and c.id == my_course_id %} path-card--mine{% endif %}"
+       href="{% if my_course_id and c.id == my_course_id %}{{ url_for('student_home') }}{% else %}{{ url_for('course_detail', slug=c.slug) }}{% endif %}">
       <div
         class="path-card__photo{% if c.slug in logo_slugs %} path-card__photo--logo path-card__photo--{{ c.slug }}{% endif %}"
         role="img"
@@ -61,13 +62,15 @@
         </p>
         <h3 class="path-card__title">{{ c.title }}</h3>
         <p class="path-card__desc">{{ c.description }}</p>
-        {% if my_course_id and c.id == my_course_id %}
-          <a class="text-link path-card__cta" href="{{ url_for('student_home') }}">Open my lessons</a>
-        {% elif current_user and current_user.role == 'student' %}
-          <p class="muted path-card__cta">View only</p>
-        {% endif %}
+        <span class="text-link path-card__cta">
+          {% if my_course_id and c.id == my_course_id %}
+            Open my lessons
+          {% else %}
+            View course
+          {% endif %}
+        </span>
       </div>
-    </article>
+    </a>
     {% else %}
     <p class="muted">Courses will appear here once set up.</p>
     {% endfor %}
