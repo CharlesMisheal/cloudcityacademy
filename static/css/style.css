@@ -387,6 +387,23 @@ a.staff-quiet:hover {
   background-color: #dfe6ea;
 }
 
+/* Brand logos — full mark, not photo-crop */
+.path-card__photo--logo {
+  background-size: 58% auto;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.path-card__photo--scratch {
+  background-color: #4d97ff;
+  background-size: 72% auto;
+}
+
+.path-card__photo--python-for-beginners {
+  background-color: #1e293b;
+  background-size: 42% auto;
+}
+
 .path-card__body {
   flex: 1 1 auto;
   display: flex;

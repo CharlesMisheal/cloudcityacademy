@@ -56,7 +56,7 @@
     {% for c in catalog %}
     <article class="path-card{% if course and c.id == course.id %} path-card--mine{% endif %}">
       <div
-        class="path-card__photo"
+        class="path-card__photo{% if c.slug in logo_slugs %} path-card__photo--logo path-card__photo--{{ c.slug }}{% endif %}"
         role="img"
         aria-label="{{ c.title }}"
         style="background-image: url('{{ course_images.get(c.slug, '') }}');"

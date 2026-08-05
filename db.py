@@ -122,7 +122,7 @@ CATEGORY_LABELS = {
     "cloud": "Cloud",
 }
 
-# Unique free Unsplash image per course (no shared thumbnails)
+# Course card media: Unsplash photos, or /static paths for brand logos
 COURSE_IMAGES = {
     "office-ms-word": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=900&q=80",
     "office-excel": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80",
@@ -135,12 +135,15 @@ COURSE_IMAGES = {
     "system-design-thinking": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80",
     "python-data-apps": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=900&q=80",
     "python-blocks": "https://images.unsplash.com/photo-1587620962725-abab7fe55159?auto=format&fit=crop&w=900&q=80",
-    "scratch": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=80",
+    "scratch": "/static/images/scratch-logo.svg",
     "android-app-development": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=900&q=80",
     "website-development": "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=900&q=80",
-    "python-for-beginners": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=80",
+    "python-for-beginners": "/static/images/python-logo.svg",
     "cloud-computing": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80",
 }
+
+# Use contain + brand tint instead of photo crop for these cards
+COURSE_LOGO_SLUGS = frozenset({"scratch", "python-for-beginners"})
 
 
 
