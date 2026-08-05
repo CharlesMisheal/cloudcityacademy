@@ -89,7 +89,23 @@ Visit: https://cloudcity.pythonanywhere.com
 Demo logins (change passwords after first use):
   Admin:   admin@cloudcity.local   /  Admin123!
   Teacher: teacher@cloudcity.local /  Teacher123!
-  Students: use Register free on the homepage
+  Students: Apply form → Admin creates Student ID → students sign in with ID only
+
+-------------------------------------------------------
+Email applications to your inbox (optional, free SMTP)
+-------------------------------------------------------
+Applications always appear under Admin → Applications.
+To also receive them by email (e.g. Gmail app password):
+
+In the PythonAnywhere WSGI file (or Bash before reload), set:
+
+  import os
+  os.environ["CLOUDCITY_ADMIN_EMAIL"] = "you@gmail.com"
+  os.environ["CLOUDCITY_SMTP_USER"] = "you@gmail.com"
+  os.environ["CLOUDCITY_SMTP_PASSWORD"] = "your-16-char-app-password"
+  # defaults: smtp.gmail.com:587 TLS
+
+Then Web → Reload.
 
 -------------------------------------------------------
 If you see an error

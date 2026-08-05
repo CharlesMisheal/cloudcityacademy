@@ -23,8 +23,8 @@
         <a class="btn btn-light" href="{{ url_for('student_home') }}">My course</a>
         <a class="btn btn-ghost-light" href="#courses">All courses</a>
       {% else %}
-        <a class="btn btn-light" href="{{ url_for('login') }}">Sign in with Student ID</a>
-        <a class="btn btn-ghost-light" href="#courses">Browse courses</a>
+        <a class="btn btn-light" href="{{ url_for('register') }}">Apply for a course</a>
+        <a class="btn btn-ghost-light" href="{{ url_for('login') }}">I have a Student ID</a>
       {% endif %}
     </div>
   </div>

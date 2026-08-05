@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Enrol — {{ ACADEMY_NAME }}{% endblock %}
+{% block title %}Apply — {{ ACADEMY_NAME }}{% endblock %}
 {% block body_class %}is-auth{% endblock %}
 {% block main_class %}main--flush{% endblock %}
 {% block content %}
@@ -7,34 +7,59 @@
   <div
     class="auth-layout__photo"
     role="img"
-    aria-label="Laptop on a desk ready for coding practice"
-    style="background-image: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&amp;fit=crop&amp;w=1400&amp;q=80');"
+    aria-label="Students learning together at laptops"
+    style="background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&amp;fit=crop&amp;w=1400&amp;q=80');"
   ></div>
   <div class="auth-layout__form">
-    <p class="eyebrow">Student enrolment</p>
-    <h1>Join CloudCity</h1>
-    <p class="sub">Create your student account and choose the course you are taking.</p>
+    <p class="eyebrow">New students</p>
+    <h1>Apply for a course</h1>
+    <p class="sub">
+      Fill in your details. CloudCity Admin will receive your application and create a
+      <strong>Student ID</strong> for your course. You sign in with that ID only — no public password.
+    </p>
+
     <form class="form" method="post">
       <label>Full name
-        <input type="text" name="full_name" required autocomplete="name">
+        <input type="text" name="full_name" required autocomplete="name"
+               value="{{ form.get('full_name', '') }}">
       </label>
       <label>Email
-        <input type="email" name="email" required autocomplete="email">
+        <input type="email" name="email" required autocomplete="email"
+               value="{{ form.get('email', '') }}">
       </label>
-      <label>Password
-        <input type="password" name="password" required minlength="6" autocomplete="new-password">
+      <label>Phone (WhatsApp ok)
+        <input type="tel" name="phone" autocomplete="tel"
+               value="{{ form.get('phone', '') }}" placeholder="+234…">
       </label>
-      <label>Course
-        <select name="course_id" required>
-          <option value="" disabled {% if not selected_course %}selected{% endif %}>Select a course</option>
+      <label>Preferred course
+        <select name="course_id">
+          <option value="">I’ll discuss with admin</option>
           {% for c in courses %}
-          <option value="{{ c.id }}" {% if selected_course and selected_course|string == c.id|string %}selected{% endif %}>{{ c.title }}</option>
+          <option value="{{ c.id }}"
+            {% if form.get('course_id')|string == c.id|string %}selected{% endif %}>
+            {{ c.title }}
+          </option>
           {% endfor %}
         </select>
       </label>
-      <button class="btn" type="submit">Create account</button>
+      <label>Age group
+        <select name="age_group">
+          <option value="">Select (optional)</option>
+          {% for g in ['Under 12', '12–15', '16–18', '19–25', '26+'] %}
+          <option value="{{ g }}" {% if form.get('age_group') == g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Anything we should know?
+        <textarea name="message" rows="4" placeholder="Goals, schedule, school name…">{{ form.get('message', '') }}</textarea>
+      </label>
+      <button class="btn" type="submit">Submit application</button>
     </form>
-    <p class="muted auth-switch">Already enrolled? <a href="{{ url_for('login') }}">Sign in</a></p>
+
+    <p class="muted auth-switch">
+      Already have a Student ID?
+      <a href="{{ url_for('login') }}">Sign in here</a>
+    </p>
   </div>
 </section>
 {% endblock %}

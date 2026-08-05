@@ -13,7 +13,12 @@
   <div class="stat"><strong>{{ stats.teachers }}</strong><span>Teachers</span></div>
   <div class="stat"><strong>{{ stats.assessments }}</strong><span>Assessments</span></div>
   <div class="stat"><strong>{{ stats.certs }}</strong><span>Certificates</span></div>
+  <div class="stat"><strong>{{ stats.applications }}</strong><span>New applications</span></div>
 </div>
+
+<p style="margin:0 0 1rem">
+  <a class="btn btn-sm" href="{{ url_for('admin_registrations') }}">Review applications</a>
+</p>
 
 <div class="panel table-wrap">
   <h2>Recent assessments</h2>

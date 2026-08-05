@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Application received — {{ ACADEMY_NAME }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Thank you</h1>
+    <p>
+      Your application is with CloudCity Admin. When they create your account you will receive a
+      <strong>Student ID</strong>. Use that ID (with no password) to open your course.
+    </p>
+  </div>
+  <a class="btn" href="{{ url_for('home') }}">Back to home</a>
+</div>
+<section class="panel">
+  <p class="muted">You can browse courses while you wait. Lessons unlock only after your Student ID is issued.</p>
+  <a class="text-link" href="{{ url_for('courses_catalog') }}">See all courses</a>
+</section>
+{% endblock %}

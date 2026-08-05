@@ -62,6 +62,7 @@
           <a href="{{ url_for('courses_catalog') }}">Catalog</a>
         {% elif current_user.role == 'admin' %}
           <a href="{{ url_for('admin_home') }}">Admin</a>
+          <a href="{{ url_for('admin_registrations') }}">Applications</a>
           <a href="{{ url_for('admin_users') }}">Users</a>
           <a href="{{ url_for('admin_assessments') }}">Assessments</a>
           <a href="{{ url_for('admin_certificates') }}">Certificates</a>
@@ -71,6 +72,7 @@
         <a href="{{ url_for('logout') }}">Sign out</a>
       {% else %}
         <a href="{{ url_for('courses_catalog') }}">Courses</a>
+        <a href="{{ url_for('register') }}">Apply</a>
         <a href="{{ url_for('login') }}">Student ID</a>
       {% endif %}
     </nav>

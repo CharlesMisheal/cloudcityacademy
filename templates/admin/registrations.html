@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Applications — Admin{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Student applications</h1>
+    <p>
+      Forms submitted on the public site.
+      {% if email_ready %}
+        Email notifications are configured (applications also land in your inbox).
+      {% else %}
+        <strong>Email not configured yet</strong> — applications still appear here.
+        Set SMTP env vars on PythonAnywhere so new forms also email you
+        (<code>CLOUDCITY_ADMIN_EMAIL</code>, <code>CLOUDCITY_SMTP_USER</code>, <code>CLOUDCITY_SMTP_PASSWORD</code>).
+      {% endif %}
+    </p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('admin_users') }}">Create Student ID</a>
+</div>
+
+<section class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Course</th>
+          <th>Email status</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.created_at[:16].replace('T',' ') }}</td>
+          <td>
+            <strong>{{ r.full_name }}</strong>
+            {% if r.age_group %}<br><span class="muted">{{ r.age_group }}</span>{% endif %}
+            {% if r.message %}<br><span class="muted">{{ r.message[:80] }}{% if r.message|length > 80 %}…{% endif %}</span>{% endif %}
+          </td>
+          <td>
+            <a href="mailto:{{ r.email }}">{{ r.email }}</a>
+            {% if r.phone %}<br>{{ r.phone }}{% endif %}
+          </td>
+          <td>{{ r.course_title or '—' }}</td>
+          <td>
+            {% if r.email_sent %}
+              <span class="badge done">Emailed</span>
+            {% else %}
+              <span class="badge pending">Not emailed</span>
+              {% if r.email_error %}<br><span class="muted">{{ r.email_error[:60] }}</span>{% endif %}
+            {% endif %}
+          </td>
+          <td>{{ r.status }}</td>
+          <td>
+            {% if r.status == 'new' %}
+            <form class="inline-form" method="post">
+              <input type="hidden" name="action" value="mark_done">
+              <input type="hidden" name="req_id" value="{{ r.id }}">
+              <button class="btn btn-sm" type="submit">Mark handled</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted">No applications yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

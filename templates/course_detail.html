@@ -29,7 +29,8 @@
       <p class="muted">Your Student ID is assigned to <strong>{{ my_course.title if my_course else 'another course' }}</strong>.</p>
       <a class="btn btn-ghost" href="{{ url_for('student_home') }}">Back to my course</a>
     {% else %}
-      <a class="btn" href="{{ url_for('login') }}">Sign in with Student ID</a>
+      <a class="btn" href="{{ url_for('register') }}">Apply for this course</a>
+      <a class="btn btn-ghost" href="{{ url_for('login') }}" style="margin-left:0.5rem">I have a Student ID</a>
     {% endif %}
   </div>
 </section>

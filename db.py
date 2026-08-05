@@ -340,6 +340,23 @@ def init_db():
             course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
             PRIMARY KEY (teacher_id, course_id)
         );
+
+        CREATE TABLE IF NOT EXISTS registration_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL DEFAULT '',
+            course_id INTEGER REFERENCES courses(id),
+            course_title TEXT NOT NULL DEFAULT '',
+            age_group TEXT NOT NULL DEFAULT '',
+            message TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'new',
+            email_sent INTEGER NOT NULL DEFAULT 0,
+            email_error TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            handled_at TEXT,
+            notes TEXT NOT NULL DEFAULT ''
+        );
         """
     )
     db.commit()
@@ -362,6 +379,27 @@ def _migrate_schema(db):
     )
     db.commit()
     _migrate_courses_level_constraint(db)
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS registration_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL DEFAULT '',
+            course_id INTEGER REFERENCES courses(id),
+            course_title TEXT NOT NULL DEFAULT '',
+            age_group TEXT NOT NULL DEFAULT '',
+            message TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'new',
+            email_sent INTEGER NOT NULL DEFAULT 0,
+            email_error TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            handled_at TEXT,
+            notes TEXT NOT NULL DEFAULT ''
+        )
+        """
+    )
+    db.commit()
 
 
 def _migrate_courses_level_constraint(db):

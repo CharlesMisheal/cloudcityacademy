@@ -39,6 +39,7 @@ from db import (
     query_one,
 )
 from services.certificates import build_certificate_pdf
+from services.mailer import email_configured, send_plain_email
 
 
 
@@ -327,13 +328,118 @@ def register_routes(app: Flask):
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
-        """Public self-enrolment removed — admin issues Student IDs."""
-        flash(
-            "Enrolment is by Student ID only. Your CloudCity Admin gives you a Student ID "
-            "with your course assigned. Enter that ID to sign in.",
-            "warn",
+        """
+        Public application form — does NOT auto-create Student IDs.
+        Details go to admin email (if SMTP configured) and the admin inbox page.
+        """
+        courses = query_all(
+            "SELECT id, title, slug FROM courses WHERE is_active = 1 ORDER BY title"
         )
-        return redirect(url_for("login"))
+        if request.method == "POST":
+            full_name = (request.form.get("full_name") or "").strip()
+            email = (request.form.get("email") or "").strip().lower()
+            phone = (request.form.get("phone") or "").strip()
+            course_id = request.form.get("course_id") or ""
+            age_group = (request.form.get("age_group") or "").strip()
+            message = (request.form.get("message") or "").strip()
+
+            if not full_name or not email:
+                flash("Please enter your full name and email address.", "error")
+                return render_template(
+                    "register.html",
+                    courses=courses,
+                    form=request.form,
+                    email_ready=email_configured(),
+                )
+            if "@" not in email or "." not in email.split("@")[-1]:
+                flash("Please enter a valid email address.", "error")
+                return render_template(
+                    "register.html",
+                    courses=courses,
+                    form=request.form,
+                    email_ready=email_configured(),
+                )
+
+            course_title = ""
+            cid = None
+            if course_id:
+                course = query_one(
+                    "SELECT id, title FROM courses WHERE id = ? AND is_active = 1",
+                    (course_id,),
+                )
+                if course:
+                    cid = course["id"]
+                    course_title = course["title"]
+
+            mail_body = (
+                f"New CloudCity Academy student application\n"
+                f"{'=' * 48}\n\n"
+                f"Full name:   {full_name}\n"
+                f"Email:       {email}\n"
+                f"Phone:       {phone or '—'}\n"
+                f"Age group:   {age_group or '—'}\n"
+                f"Course:      {course_title or 'Not selected'}\n"
+                f"Submitted:   {now_iso()}\n\n"
+                f"Message from applicant:\n{message or '(none)'}\n\n"
+                f"{'=' * 48}\n"
+                f"Next steps for admin:\n"
+                f"1) Open Admin → Applications in CloudCity Academy\n"
+                f"2) Create a Student ID and assign this course\n"
+                f"3) Send the Student ID to the applicant by email/WhatsApp\n"
+            )
+
+            sent_ok, send_info = False, "not attempted"
+            if email_configured():
+                sent_ok, send_info = send_plain_email(
+                    subject=f"[CloudCity] New student application — {full_name}",
+                    body=mail_body,
+                )
+            else:
+                send_info = "SMTP not configured (saved in admin panel only)"
+
+            execute(
+                """INSERT INTO registration_requests
+                   (full_name, email, phone, course_id, course_title, age_group, message,
+                    status, email_sent, email_error, created_at)
+                   VALUES (?,?,?,?,?,?,?,'new',?,?,?)""",
+                (
+                    full_name,
+                    email,
+                    phone,
+                    cid,
+                    course_title,
+                    age_group,
+                    message,
+                    1 if sent_ok else 0,
+                    "" if sent_ok else send_info,
+                    now_iso(),
+                ),
+            )
+
+            if sent_ok:
+                flash(
+                    "Application received. Your details were emailed to CloudCity Admin. "
+                    "You will get a Student ID after they process your application.",
+                    "ok",
+                )
+            else:
+                flash(
+                    "Application received and saved for CloudCity Admin. "
+                    "If email delivery was not configured yet, they will still see it under Admin → Applications.",
+                    "ok",
+                )
+            return redirect(url_for("register_thanks"))
+
+        return render_template(
+            "register.html",
+            courses=courses,
+            form={},
+            email_ready=email_configured(),
+        )
+
+    @app.route("/register/thanks")
+    def register_thanks():
+        return render_template("register_thanks.html")
 
     def _sign_in_student_from_code(code: str, *, fail_template="login.html"):
         """Shared student ID login used by /login and global header form."""
@@ -942,6 +1048,9 @@ def register_routes(app: Flask):
             "certs": query_one(
                 "SELECT COUNT(*) AS c FROM enrollments WHERE certificate_issued_at IS NOT NULL"
             )["c"],
+            "applications": query_one(
+                "SELECT COUNT(*) AS c FROM registration_requests WHERE status='new'"
+            )["c"],
         }
         recent = query_all(
             """
@@ -955,6 +1064,33 @@ def register_routes(app: Flask):
             """
         )
         return render_template("admin/home.html", stats=stats, recent=recent)
+
+    @app.route("/admin/registrations", methods=["GET", "POST"])
+    @role_required("admin")
+    def admin_registrations():
+        if request.method == "POST":
+            action = request.form.get("action")
+            rid = request.form.get("req_id")
+            if action == "mark_done" and rid:
+                execute(
+                    """UPDATE registration_requests
+                       SET status = 'handled', handled_at = ?
+                       WHERE id = ?""",
+                    (now_iso(), rid),
+                )
+                flash("Marked as handled.", "ok")
+            return redirect(url_for("admin_registrations"))
+
+        rows = query_all(
+            """SELECT * FROM registration_requests
+               ORDER BY CASE status WHEN 'new' THEN 0 ELSE 1 END, created_at DESC
+               LIMIT 200"""
+        )
+        return render_template(
+            "admin/registrations.html",
+            rows=rows,
+            email_ready=email_configured(),
+        )
 
     @app.route("/admin/users", methods=["GET", "POST"])
     @role_required("admin")

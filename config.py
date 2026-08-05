@@ -26,3 +26,16 @@ class Config:
     # Academy brand (public free URL when deployed)
     ACADEMY_NAME = "CloudCity Academy"
     PUBLIC_HOST = "cloudcity.pythonanywhere.com"
+
+    # Email notifications for new student applications (free: Gmail app password or similar)
+    # On PythonAnywhere set these in Web → WSGI file or Bash:
+    #   export CLOUDCITY_ADMIN_EMAIL='you@gmail.com'
+    #   export CLOUDCITY_SMTP_USER='you@gmail.com'
+    #   export CLOUDCITY_SMTP_PASSWORD='your-app-password'
+    ADMIN_NOTIFY_EMAIL = os.environ.get("CLOUDCITY_ADMIN_EMAIL", "").strip()
+    SMTP_HOST = os.environ.get("CLOUDCITY_SMTP_HOST", "smtp.gmail.com").strip()
+    SMTP_PORT = int(os.environ.get("CLOUDCITY_SMTP_PORT", "587"))
+    SMTP_USER = os.environ.get("CLOUDCITY_SMTP_USER", "").strip()
+    SMTP_PASSWORD = os.environ.get("CLOUDCITY_SMTP_PASSWORD", "").strip()
+    SMTP_FROM = os.environ.get("CLOUDCITY_SMTP_FROM", SMTP_USER or "noreply@cloudcity.local").strip()
+    SMTP_USE_TLS = os.environ.get("CLOUDCITY_SMTP_TLS", "1") != "0"
