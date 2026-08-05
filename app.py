@@ -590,10 +590,45 @@ def register_routes(app: Flask):
     def teacher_course(course_id):
         course = assert_staff_course(course_id)
         weeks = query_all(
-            "SELECT * FROM weeks WHERE course_id = ? ORDER BY week_number",
+            """
+            SELECT w.*,
+              (SELECT COUNT(*) FROM notes n WHERE n.week_id = w.id) AS note_count,
+              (SELECT COUNT(*) FROM questions q WHERE q.week_id = w.id) AS question_count
+            FROM weeks w
+            WHERE w.course_id = ? AND w.is_published = 1
+            ORDER BY w.week_number
+            """,
             (course_id,),
         )
         return render_template("teacher/course.html", course=course, weeks=weeks)
+
+    @app.route("/teacher/week/<int:week_id>/view")
+    @role_required("teacher", "admin")
+    def teacher_view_week(week_id):
+        """Read-only preview of student-facing content + answer key for staff."""
+        week = assert_staff_week(week_id)
+        note = query_one(
+            "SELECT * FROM notes WHERE week_id = ? ORDER BY updated_at DESC LIMIT 1",
+            (week_id,),
+        )
+        questions = query_all(
+            "SELECT * FROM questions WHERE week_id = ? ORDER BY sort_order, id",
+            (week_id,),
+        )
+        parsed = []
+        for q in questions:
+            parsed.append(
+                {
+                    **dict(q),
+                    "options": json.loads(q["options_json"]) if q["options_json"] else [],
+                }
+            )
+        return render_template(
+            "teacher/view_week.html",
+            week=week,
+            note=note,
+            questions=parsed,
+        )
 
     @app.route("/teacher/week/<int:week_id>", methods=["GET", "POST"])
     @role_required("teacher", "admin")

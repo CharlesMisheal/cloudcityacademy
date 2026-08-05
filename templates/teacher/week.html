@@ -7,7 +7,10 @@
     <h1>Week {{ week.week_number }}: {{ week.title }}</h1>
     <p>Notes + examples for students. Questions power the weekly test.</p>
   </div>
-  <a class="btn btn-ghost" href="{{ url_for('teacher_course', course_id=week.course_id) }}">Back</a>
+  <div class="stack-actions">
+    <a class="btn btn-ghost" href="{{ url_for('teacher_view_week', week_id=week.id) }}">View</a>
+    <a class="btn btn-ghost" href="{{ url_for('teacher_course', course_id=week.course_id) }}">Back</a>
+  </div>
 </div>
 
 <div class="split-2">

@@ -5,7 +5,7 @@
   <div>
     <p class="hero-kicker">{{ course.level }}</p>
     <h1>{{ course.title }}</h1>
-    <p>Select a week to edit notes and the question bank.</p>
+    <p>View published content as students see it, or edit notes and assessments.</p>
   </div>
   <a class="btn btn-ghost" href="{{ url_for('teacher_home') }}">All courses</a>
 </div>
@@ -14,9 +14,19 @@
   {% for w in weeks %}
   <article class="week-item">
     <div class="week-num">{{ '%02d'|format(w.week_number) }}</div>
-    <div><strong>{{ w.title }}</strong></div>
-    <a class="btn btn-sm" href="{{ url_for('teacher_week', week_id=w.id) }}">Edit</a>
+    <div>
+      <strong>{{ w.title }}</strong>
+      <div class="muted" style="margin-top:0.25rem">
+        {{ w.note_count or 0 }} note(s) · {{ w.question_count or 0 }} question(s)
+      </div>
+    </div>
+    <div class="stack-actions" style="margin-top:0">
+      <a class="btn btn-sm btn-ghost" href="{{ url_for('teacher_view_week', week_id=w.id) }}">View</a>
+      <a class="btn btn-sm" href="{{ url_for('teacher_week', week_id=w.id) }}">Edit</a>
+    </div>
   </article>
+  {% else %}
+  <p class="muted">No published weeks for this course.</p>
   {% endfor %}
 </div>
 {% endblock %}

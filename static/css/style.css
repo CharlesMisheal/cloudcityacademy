@@ -1075,10 +1075,23 @@ body.is-auth .flash-wrap {
   margin: 1rem auto 0;
 }
 
-.auth-shell h1 {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  margin: 0 0 0.35rem;
+.view-options {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--ink-soft);
+}
+
+.view-options li {
+  margin: 0.25rem 0;
+}
+
+.view-options li.is-correct {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.week-item .stack-actions {
+  justify-content: flex-end;
 }
 
 @keyframes rise {
