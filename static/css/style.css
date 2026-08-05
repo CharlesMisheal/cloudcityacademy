@@ -404,6 +404,12 @@ a.staff-quiet:hover {
   background-size: 42% auto;
 }
 
+.path-card__photo--python-blocks {
+  background-color: #d3dce8;
+  background-size: cover;
+  background-position: center top;
+}
+
 .path-card__body {
   flex: 1 1 auto;
   display: flex;

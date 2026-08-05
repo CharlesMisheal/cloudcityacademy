@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" role="img" aria-label="Python blocks style workspace">
+  <defs>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8eef5"/>
+      <stop offset="100%" stop-color="#d3dce8"/>
+    </linearGradient>
+    <filter id="soft" x="-8%" y="-8%" width="116%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-opacity="0.22"/>
+    </filter>
+    <style>
+      .lbl { font-family: "Segoe UI", system-ui, sans-serif; font-size: 15px; font-weight: 600; fill: #fff; }
+      .fld { font-family: "Segoe UI", system-ui, sans-serif; font-size: 13px; font-weight: 500; fill: #1e293b; }
+      .side { font-family: "Segoe UI", system-ui, sans-serif; font-size: 11px; fill: #64748b; }
+    </style>
+  </defs>
+
+  <!-- workspace -->
+  <rect width="480" height="280" fill="url(#desk)"/>
+  <rect x="0" y="0" width="480" height="36" fill="#1e293b"/>
+  <text x="16" y="24" class="side" fill="#94a3b8" style="font-size:13px;font-weight:600">Python · Blocks</text>
+  <circle cx="440" cy="18" r="6" fill="#4ade80"/>
+  <circle cx="458" cy="18" r="6" fill="#fbbf24"/>
+
+  <!-- palette strip -->
+  <rect x="0" y="36" width="88" height="244" fill="#f1f5f9"/>
+  <text x="12" y="58" class="side" style="font-weight:600">Palette</text>
+  <rect x="12" y="70" width="64" height="22" rx="4" fill="#c94ac5"/>
+  <rect x="12" y="100" width="64" height="22" rx="4" fill="#5ba55b"/>
+  <rect x="12" y="130" width="64" height="22" rx="4" fill="#5b80a5"/>
+  <rect x="12" y="160" width="64" height="22" rx="4" fill="#e5a03b"/>
+
+  <!-- MAIN SCRIPT (EduBlocks / Blockly-like C-stack) -->
+
+  <!-- hat: start -->
+  <g filter="url(#soft)" transform="translate(120,54)">
+    <path fill="#c94ac5" d="
+      M0,14
+      a14,14 0 0 1 14,-14
+      h 200
+      a14,14 0 0 1 14,14
+      v 10
+      h -22
+      a10,8 0 0 0 -20,0
+      h -172
+      a14,14 0 0 1 -14,-14
+      z
+      M0,24
+      h 228
+      v 18
+      h -12
+      a10,8 0 0 1 -20,0
+      h -196
+      a10,10 0 0 1 -0,-18
+      z"/>
+    <text x="18" y="40" class="lbl">when run</text>
+  </g>
+
+  <!-- print block -->
+  <g filter="url(#soft)" transform="translate(120,96)">
+    <path fill="#c94ac5" d="
+      M0,0 h 12
+      a10,8 0 0 1 20,0
+      h 210
+      a10,10 0 0 1 10,10
+      v 22
+      a10,10 0 0 1 -10,10
+      h -210
+      a10,8 0 0 0 -20,0
+      h -12
+      a10,10 0 0 1 -10,-10
+      v -22
+      a10,10 0 0 1 10,-10
+      z"/>
+    <text x="18" y="30" class="lbl">print</text>
+    <rect x="70" y="12" width="150" height="24" rx="6" fill="#fff"/>
+    <text x="80" y="29" class="fld">"Hello, Python"</text>
+  </g>
+
+  <!-- for loop C-shape (outer) -->
+  <g filter="url(#soft)" transform="translate(120,146)">
+    <!-- top bar with notch -->
+    <path fill="#5ba55b" d="
+      M0,0 h12
+      a10,8 0 0 1 20,0
+      h 230
+      a10,10 0 0 1 10,10
+      v 24
+      h -170
+      v 8
+      h -28
+      a10,8 0 0 0 -20,0
+      h -26
+      a10,10 0 0 1 -10,-10
+      v -22
+      a10,10 0 0 1 10,-10
+      z"/>
+    <text x="18" y="26" class="lbl">for</text>
+    <rect x="52" y="10" width="28" height="20" rx="5" fill="#fff"/>
+    <text x="60" y="25" class="fld">i</text>
+    <text x="88" y="26" class="lbl">in range</text>
+    <rect x="168" y="10" width="36" height="20" rx="5" fill="#fff"/>
+    <text x="178" y="25" class="fld">5</text>
+
+    <!-- left rail + bottom of C -->
+    <path fill="#5ba55b" d="
+      M0,42 h 42 v 58 h -32
+      a10,10 0 0 1 -10,-10
+      v -38
+      a10,10 0 0 1 10,-10
+      z
+      M0,100
+      h 12
+      a10,8 0 0 0 20,0
+      h 220
+      a10,10 0 0 1 10,10
+      v 14
+      a10,10 0 0 1 -10,10
+      h -220
+      a10,8 0 0 1 -20,0
+      h -12
+      a10,10 0 0 1 -10,-10
+      v -14
+      a10,10 0 0 1 10,-10
+      z"/>
+  </g>
+
+  <!-- nested: if inside loop -->
+  <g filter="url(#soft)" transform="translate(162,194)">
+    <path fill="#5b80a5" d="
+      M0,0 h12
+      a10,8 0 0 1 20,0
+      h 150
+      a10,10 0 0 1 10,10
+      v 20
+      a10,10 0 0 1 -10,10
+      h -150
+      a10,8 0 0 0 -20,0
+      h -12
+      a10,10 0 0 1 -10,-10
+      v -20
+      a10,10 0 0 1 10,-10
+      z"/>
+    <text x="16" y="26" class="lbl">if</text>
+    <rect x="42" y="10" width="72" height="20" rx="5" fill="#fff"/>
+    <text x="50" y="25" class="fld">i &gt; 2</text>
+    <text x="120" y="26" class="lbl">then</text>
+  </g>
+
+  <!-- nested print deep -->
+  <g filter="url(#soft)" transform="translate(176,236)">
+    <path fill="#c94ac5" d="
+      M0,0 h12
+      a10,8 0 0 1 20,0
+      h 110
+      a10,10 0 0 1 10,10
+      v 16
+      a10,10 0 0 1 -10,10
+      h -110
+      a10,8 0 0 0 -20,0
+      h -12
+      a10,10 0 0 1 -10,-10
+      v -16
+      a10,10 0 0 1 10,-10
+      z"/>
+    <text x="16" y="24" class="lbl">print</text>
+    <rect x="68" y="8" width="58" height="18" rx="4" fill="#fff"/>
+    <text x="76" y="21" class="fld">i</text>
+  </g>
+
+  <!-- floating trash palette piece (trinket style) -->
+  <g opacity="0.9" transform="translate(360,70)">
+    <rect width="96" height="36" rx="8" fill="#e5a03b" filter="url(#soft)"/>
+    <text x="14" y="24" class="lbl" style="font-size:13px">variables</text>
+  </g>
+  <g opacity="0.85" transform="translate(360,118)">
+    <rect width="96" height="36" rx="8" fill="#5b80a5" filter="url(#soft)"/>
+    <text x="22" y="24" class="lbl" style="font-size:13px">logic</text>
+  </g>
+</svg>
