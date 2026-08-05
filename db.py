@@ -307,47 +307,27 @@ def ensure_staff_user(full_name, email, password, role):
     return cur.lastrowid
 
 
-def _seed_or_refresh_week(
-    week_id: int,
-    course_title: str,
-    week_num: int,
-    total: int,
-    topic: str,
-    teacher_id: int,
-    now: str,
-):
-    from curriculum import lesson_content, lesson_examples, week_questions
+def _seed_or_refresh_week(week_id: int, lesson: dict, teacher_id: int, now: str):
+    """Write full lesson notes + assessment for one week."""
+    from lessons import MARKER
 
-    marker = "[[CCA_CURRICULUM_V1]]"
     note = query_one(
         "SELECT * FROM notes WHERE week_id = ? ORDER BY updated_at DESC LIMIT 1",
         (week_id,),
     )
-    content = lesson_content(course_title, week_num, total, topic)
-    examples = lesson_examples(course_title, week_num, topic)
-    focus = topic.split("—")[0].strip()
-    title = f"Week {week_num}: {focus}"
-    if len(title) > 80:
-        title = title[:77] + "…"
+    title = lesson["title"]
+    content = lesson["content"]
+    examples = lesson["examples"]
 
-    already_curric = bool(note and marker in (note["content"] or ""))
-    thin_starter = bool(
-        note
-        and (
-            "Your teacher will expand" in (note["content"] or "")
-            or "Welcome to CloudCity Academy" in (note["content"] or "")
-            and marker not in (note["content"] or "")
-        )
-    )
-
-    if already_curric:
-        pass
-    elif note:
-        execute(
-            """UPDATE notes SET title=?, content=?, examples=?, teacher_id=?, updated_at=?
-               WHERE id=?""",
-            (title, content, examples, teacher_id, now, note["id"]),
-        )
+    has_v2 = bool(note and MARKER in (note["content"] or ""))
+    if note:
+        if not has_v2:
+            execute(
+                """UPDATE notes SET title=?, content=?, examples=?, teacher_id=?, updated_at=?
+                   WHERE id=?""",
+                (title, content, examples, teacher_id, now, note["id"]),
+            )
+        # if already V2 keep teacher edits
     else:
         execute(
             """INSERT INTO notes (week_id, teacher_id, title, content, examples, updated_at)
@@ -358,14 +338,12 @@ def _seed_or_refresh_week(
     qcount = query_one(
         "SELECT COUNT(*) AS c FROM questions WHERE week_id = ?", (week_id,)
     )["c"]
-
-    should_seed_qs = qcount == 0 or (thin_starter and qcount <= 4 and not already_curric)
-    if should_seed_qs:
+    # Reseed questions unless teacher already expanded beyond full pack (rare)
+    if qcount == 0 or not has_v2:
         if qcount:
+            # Only clear system questions when upgrading curriculum pack
             execute("DELETE FROM questions WHERE week_id = ?", (week_id,))
-        for qtype, prompt, options, correct, points, order in week_questions(
-            course_title, week_num, total, topic
-        ):
+        for qtype, prompt, options, correct, points, order in lesson["questions"]:
             execute(
                 """INSERT INTO questions
                    (week_id, qtype, prompt, options_json, correct_option, points, sort_order)
@@ -375,19 +353,19 @@ def _seed_or_refresh_week(
 
 
 def ensure_course_weeks(course_id: int, slug: str, course_title: str, teacher_id: int, now: str):
-    from curriculum import curriculum_for, week_title, weeks_for
+    from lessons import syllabus_for
+    from curriculum import weeks_for
 
-    plan = curriculum_for(slug)
+    plan = syllabus_for(slug, course_title)
     total = weeks_for(slug)
 
-    for item in plan:
-        n = item["week"]
-        topic = item["topic"]
+    for lesson in plan:
+        n = lesson["week"]
         w = query_one(
-            "SELECT id, title FROM weeks WHERE course_id = ? AND week_number = ?",
+            "SELECT id FROM weeks WHERE course_id = ? AND week_number = ?",
             (course_id, n),
         )
-        title = week_title(n, topic)
+        title = lesson["title"]
         if w:
             execute(
                 "UPDATE weeks SET title = ?, is_published = 1 WHERE id = ?",
@@ -402,13 +380,10 @@ def ensure_course_weeks(course_id: int, slug: str, course_title: str, teacher_id
             )
             week_id = cur.lastrowid
 
-        _seed_or_refresh_week(
-            week_id, course_title, n, total, topic, teacher_id, now
-        )
+        _seed_or_refresh_week(week_id, lesson, teacher_id, now)
 
-    # Unpublish weeks beyond the current curriculum length (e.g. course shortened)
     extras = query_all(
-        "SELECT id, week_number FROM weeks WHERE course_id = ? AND week_number > ?",
+        "SELECT id FROM weeks WHERE course_id = ? AND week_number > ?",
         (course_id, total),
     )
     for ex in extras:
