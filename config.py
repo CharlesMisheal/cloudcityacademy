@@ -18,6 +18,11 @@ class Config:
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024  # 4 MB
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+    # Sessions for many concurrent logins
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 12  # 12 hours
+
     # Academy brand (public free URL when deployed)
     ACADEMY_NAME = "CloudCity Academy"
     PUBLIC_HOST = "cloudcity.pythonanywhere.com"

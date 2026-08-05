@@ -25,6 +25,7 @@ from flask import (
     session,
     url_for,
 )
+from werkzeug.exceptions import HTTPException
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -1136,6 +1137,22 @@ def register_routes(app: Flask):
     def not_found(_e):
         return render_template("error.html", code=404, message="Page not found."), 404
 
+    @app.errorhandler(Exception)
+    def handle_unexpected(err):
+        """Keep the process up; show a page instead of a raw crash for unexpected errors."""
+        if isinstance(err, HTTPException):
+            return err
+        app.logger.exception("Unhandled error on %s", request.path)
+        return (
+            render_template(
+                "error.html",
+                code=500,
+                message="Something went wrong on the server. Wait a moment and try again. "
+                "If many people submitted at once, retrying usually works.",
+            ),
+            500,
+        )
+
     def _send_certificate(student_name, course_title, issued_date):
         pdf = build_certificate_pdf(
             academy_name=app.config["ACADEMY_NAME"],
@@ -1157,5 +1174,9 @@ def register_routes(app: Flask):
 app = create_app()
 
 if __name__ == "__main__":
-    # Local free development server
-    app.run(debug=True, port=5000)
+    # Local only. PythonAnywhere uses WSGI (stable worker), not this debug server.
+    # Debug reloader restarts mid-request when files change — that can look like a "crash".
+    import os
+
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    app.run(debug=debug, port=5000, use_reloader=debug)

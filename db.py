@@ -1,6 +1,7 @@
 """SQLite helpers — local file-based database."""
 import json
 import sqlite3
+import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -148,12 +149,22 @@ COURSE_LOGO_SLUGS = frozenset({"scratch", "python-for-beginners"})
 
 
 def get_db():
+    """Per-request connection, tuned for many students reading/writing at once."""
     if "db" not in g:
         path = current_app.config["DATABASE_PATH"]
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        g.db = sqlite3.connect(path)
+        # timeout: wait up to 30s if another student is mid-write (not fail instantly)
+        g.db = sqlite3.connect(str(path), timeout=30.0)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
+        g.db.execute("PRAGMA busy_timeout = 30000")
+        # WAL: readers don't block writers as harshly (good for class labs)
+        try:
+            g.db.execute("PRAGMA journal_mode = WAL")
+            g.db.execute("PRAGMA synchronous = NORMAL")
+            g.db.execute("PRAGMA temp_store = MEMORY")
+        except sqlite3.Error:
+            pass
     return g.db
 
 
@@ -177,19 +188,55 @@ def db_cursor():
         cur.close()
 
 
+def _is_locked(err: BaseException) -> bool:
+    msg = str(err).lower()
+    return "locked" in msg or "busy" in msg
+
+
 def query_all(sql, params=()):
-    return get_db().execute(sql, params).fetchall()
+    last = None
+    for attempt in range(8):
+        try:
+            return get_db().execute(sql, params).fetchall()
+        except sqlite3.OperationalError as e:
+            last = e
+            if not _is_locked(e) or attempt == 7:
+                raise
+            time.sleep(0.04 * (2**attempt))
+    raise last  # pragma: no cover
 
 
 def query_one(sql, params=()):
-    return get_db().execute(sql, params).fetchone()
+    last = None
+    for attempt in range(8):
+        try:
+            return get_db().execute(sql, params).fetchone()
+        except sqlite3.OperationalError as e:
+            last = e
+            if not _is_locked(e) or attempt == 7:
+                raise
+            time.sleep(0.04 * (2**attempt))
+    raise last  # pragma: no cover
 
 
 def execute(sql, params=()):
-    db = get_db()
-    cur = db.execute(sql, params)
-    db.commit()
-    return cur
+    last = None
+    for attempt in range(8):
+        try:
+            db = get_db()
+            cur = db.execute(sql, params)
+            db.commit()
+            return cur
+        except sqlite3.OperationalError as e:
+            last = e
+            try:
+                get_db().rollback()
+            except sqlite3.Error:
+                pass
+            if not _is_locked(e) or attempt == 7:
+                raise
+            time.sleep(0.05 * (2**attempt))
+    raise last  # pragma: no cover
 
 
 def init_db():
