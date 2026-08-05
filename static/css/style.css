@@ -539,6 +539,13 @@ a.path-card:focus-visible {
   background-repeat: no-repeat !important;
 }
 
+.path-card__photo--graphic-coreldraw {
+  background-color: #1a2e1f;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
 .path-card__body {
   flex: 1 1 auto;
   display: flex;

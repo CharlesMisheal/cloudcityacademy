@@ -128,7 +128,7 @@ COURSE_IMAGES = {
     "office-ms-word": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=900&q=80",
     "office-excel": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80",
     "office-powerpoint": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=900&q=80",
-    "graphic-coreldraw": "https://images.unsplash.com/photo-1626785774573-4b7993143485?auto=format&fit=crop&w=900&q=80",
+    "graphic-coreldraw": "/static/images/coreldraw-course.png",
     "graphic-ai": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=900&q=80",
     "video-editing-ai": "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=80",
     "ai-engineer": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80",
@@ -144,7 +144,9 @@ COURSE_IMAGES = {
 }
 
 # Use contain + brand tint instead of photo crop for these cards
-COURSE_LOGO_SLUGS = frozenset({"scratch", "python-for-beginners", "python-blocks"})
+COURSE_LOGO_SLUGS = frozenset(
+    {"scratch", "python-for-beginners", "python-blocks", "graphic-coreldraw"}
+)
 
 
 
