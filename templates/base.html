@@ -32,7 +32,7 @@
         <a href="{{ url_for('logout') }}">Sign out</a>
       {% else %}
         <a href="{{ url_for('login') }}">Sign in</a>
-        <a class="btn btn-sm" href="{{ url_for('register') }}">Join free</a>
+        <a class="btn btn-sm" href="{{ url_for('register') }}">Enrol</a>
       {% endif %}
     </nav>
   </header>
@@ -55,7 +55,7 @@
     <div class="site-footer__inner">
       <div class="site-footer__brand">
         <strong>CloudCity Academy</strong>
-        <span>Free Python for beginners &amp; advanced learners</span>
+        <span>Python training for beginners &amp; advanced learners</span>
       </div>
       <div class="site-footer__meta">
         <span>{{ PUBLIC_HOST }}</span>

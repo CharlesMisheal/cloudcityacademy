@@ -215,7 +215,7 @@ def register_routes(app: Flask):
             if user and check_password_hash(user["password_hash"], password):
                 if staff_mode and user["role"] == "student":
                     flash(
-                        "That account is a student account. Use Student sign in, or register free.",
+                        "That account is a student account. Use student sign in, or enrol as a student.",
                         "warn",
                     )
                     return render_template("login.html", staff=staff_mode)

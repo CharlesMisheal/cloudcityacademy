@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}CloudCity Academy — free Python classroom{% endblock %}
+{% block title %}CloudCity Academy — Python classroom{% endblock %}
 {% block body_class %}is-landing{% endblock %}
 {% block main_class %}main--flush{% endblock %}
 {% block content %}
@@ -19,7 +19,7 @@
       Beginner and advanced paths — lessons, assessments, and a course certificate.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-light" href="{{ url_for('register') }}">Join free</a>
+      <a class="btn btn-light" href="{{ url_for('register') }}">Enrol now</a>
       <a class="btn btn-ghost-light" href="{{ url_for('login') }}">Sign in</a>
     </div>
   </div>
@@ -28,7 +28,7 @@
 <section class="band band--paths">
   <div class="band__intro">
     <h2>Choose your course</h2>
-    <p>Register once, pick a track, and follow the weeks at your pace.</p>
+    <p>Enrol once, pick a track, and follow the weeks at your pace.</p>
   </div>
 
   <div class="path-grid">
@@ -44,7 +44,7 @@
         <p class="path-item__level">{{ c.level }}</p>
         <h3>{{ c.title }}</h3>
         <p>{{ c.description }}</p>
-        <a class="text-link" href="{{ url_for('register') }}">Start this course →</a>
+        <a class="text-link" href="{{ url_for('register') }}">Enrol in this course →</a>
       </div>
     </article>
     {% else %}
@@ -64,7 +64,7 @@
     <div class="story__text">
       <h2>How a week works</h2>
       <p>Read the lesson and examples. Take the weekly test — objective questions, short answers, and a screenshot of your work. Finish every week to become eligible for your certificate.</p>
-      <a class="btn" href="{{ url_for('register') }}">Create free account</a>
+      <a class="btn" href="{{ url_for('register') }}">Create student account</a>
     </div>
   </div>
 </section>
