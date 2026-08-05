@@ -4,7 +4,7 @@
 <div class="page-head">
   <div>
     <h1>Teaching desk</h1>
-    <p>Prepare notes, examples, and weekly questions for your courses.</p>
+    <p>Only courses assigned to you by admin. Prepare notes, examples, and weekly questions.</p>
   </div>
   <a class="btn btn-ghost" href="{{ url_for('teacher_reviews') }}">Review submissions</a>
 </div>
@@ -20,7 +20,7 @@
     <a class="btn" href="{{ url_for('teacher_course', course_id=c.id) }}">Open weeks</a>
   </article>
   {% else %}
-  <p class="muted">No courses assigned yet.</p>
+  <p class="muted">No courses assigned yet. Ask an admin to assign courses you teach.</p>
   {% endfor %}
 </div>
 {% endblock %}

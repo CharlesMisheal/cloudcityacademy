@@ -4,49 +4,62 @@
 <div class="page-head">
   <div>
     <h1>People</h1>
-    <p>Students self-register for their course. Teachers are created here by the admin.</p>
+    <p>Full access: assign teachers to courses, move students, enable or disable accounts.</p>
   </div>
 </div>
 
-<div class="split-2">
-  <section class="panel">
-    <h2>All users</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Course</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for u in users %}
-          <tr>
-            <td>{{ u.full_name }}</td>
-            <td>{{ u.email }}</td>
-            <td>{{ u.role }}</td>
-            <td>{{ u.course_title or '—' }}</td>
-            <td>{{ 'active' if u.is_active else 'disabled' }}</td>
-            <td>
-              {% if u.id != current_user.id %}
-              <form class="inline-form" method="post">
-                <input type="hidden" name="action" value="toggle">
-                <input type="hidden" name="user_id" value="{{ u.id }}">
-                <button class="btn btn-sm btn-ghost" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button>
-              </form>
+<section class="panel" style="margin-bottom:1rem">
+  <h2>All users</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Course / assignments</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.full_name }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.role }}</td>
+          <td>
+            {% if u.role == 'student' %}
+              {{ u.course_title or '—' }}
+            {% elif u.role == 'teacher' %}
+              {% set ids = teacher_assign.get(u.id, set()) %}
+              {% if ids %}
+                {{ ids|length }} course(s)
+              {% else %}
+                none assigned
               {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
+            {% else %}
+              full access
+            {% endif %}
+          </td>
+          <td>{{ 'active' if u.is_active else 'disabled' }}</td>
+          <td>
+            {% if u.id != current_user.id %}
+            <form class="inline-form" method="post">
+              <input type="hidden" name="action" value="toggle">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button class="btn btn-sm btn-ghost" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 
+<div class="split-2">
   <section class="panel">
     <h2>Add teacher</h2>
     <form class="form" method="post">
@@ -60,7 +73,7 @@
       <label>Temp password
         <input type="text" name="password" value="Teacher123!">
       </label>
-      <label>Assign courses
+      <label>Assign courses they teach
         {% for c in courses %}
         <label style="font-weight:500;color:var(--ink)">
           <input type="checkbox" name="course_ids" value="{{ c.id }}"> {{ c.title }}
@@ -70,5 +83,55 @@
       <button class="btn" type="submit">Create teacher</button>
     </form>
   </section>
+
+  <section class="panel">
+    <h2>Edit teacher assignments</h2>
+    <p class="muted">Teachers only see notes and reviews for these courses. Uncheck all then save to clear.</p>
+    {% for t in teachers %}
+    <form class="form" method="post" style="margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--line)">
+      <input type="hidden" name="action" value="assign_courses">
+      <input type="hidden" name="teacher_id" value="{{ t.id }}">
+      <strong>{{ t.full_name }}</strong>
+      <span class="muted"> · {{ t.email }}</span>
+      <label style="margin-top:0.5rem">Courses
+        {% set ids = teacher_assign.get(t.id, set()) %}
+        {% for c in courses %}
+        <label style="font-weight:500;color:var(--ink)">
+          <input type="checkbox" name="course_ids" value="{{ c.id }}"
+            {% if c.id in ids %}checked{% endif %}> {{ c.title }}
+        </label>
+        {% endfor %}
+      </label>
+      <button class="btn btn-sm" type="submit">Save assignments</button>
+    </form>
+    {% else %}
+    <p class="muted">No teachers yet.</p>
+    {% endfor %}
+  </section>
 </div>
+
+<section class="panel" style="margin-top:1rem">
+  <h2>Move student to a course</h2>
+  <p class="muted">Students only take assessments for their enrolled course.</p>
+  <form class="form" method="post" style="max-width:36rem">
+    <input type="hidden" name="action" value="change_student_course">
+    <label>Student
+      <select name="student_id" required>
+        <option value="" disabled selected>Select student</option>
+        {% for s in students %}
+        <option value="{{ s.id }}">{{ s.full_name }} — {{ s.email }}{% if s.course_title %} ({{ s.course_title }}){% endif %}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>New course
+      <select name="course_id" required>
+        <option value="" disabled selected>Select course</option>
+        {% for c in courses %}
+        <option value="{{ c.id }}">{{ c.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Update enrolment</button>
+  </form>
+</section>
 {% endblock %}

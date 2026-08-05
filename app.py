@@ -102,17 +102,113 @@ def now_iso() -> str:
 
 
 def student_course(user_id: int):
+    """Active course enrolment for a student (one primary course)."""
     return query_one(
         """
         SELECT c.*, e.id AS enrollment_id, e.certificate_issued_at, e.enrolled_at
         FROM enrollments e
         JOIN courses c ON c.id = e.course_id
-        WHERE e.user_id = ?
+        WHERE e.user_id = ? AND c.is_active = 1
         ORDER BY e.enrolled_at DESC
         LIMIT 1
         """,
         (user_id,),
     )
+
+
+def student_enrolled_in_course(user_id: int, course_id: int) -> bool:
+    row = query_one(
+        """
+        SELECT 1 FROM enrollments e
+        JOIN courses c ON c.id = e.course_id
+        WHERE e.user_id = ? AND e.course_id = ? AND c.is_active = 1
+        """,
+        (user_id, course_id),
+    )
+    return bool(row)
+
+
+def teacher_teaches_course(teacher_id: int, course_id: int) -> bool:
+    row = query_one(
+        """
+        SELECT 1 FROM teacher_courses
+        WHERE teacher_id = ? AND course_id = ?
+        """,
+        (teacher_id, course_id),
+    )
+    return bool(row)
+
+
+def user_can_access_course(course_id: int) -> bool:
+    """Admin: all courses. Teacher: assigned only. Student: enrolled only."""
+    if not g.user:
+        return False
+    role = g.user["role"]
+    if role == "admin":
+        return True
+    if role == "teacher":
+        return teacher_teaches_course(g.user["id"], course_id)
+    if role == "student":
+        return student_enrolled_in_course(g.user["id"], course_id)
+    return False
+
+
+def require_course_access(course_id: int, *, for_roles=None):
+    """Abort if current user cannot access this course (admin always allowed)."""
+    if not g.user:
+        abort(403)
+    if for_roles and g.user["role"] not in for_roles and g.user["role"] != "admin":
+        abort(403)
+    if g.user["role"] == "admin":
+        return
+    if not user_can_access_course(course_id):
+        abort(403)
+
+
+def assert_student_week(week_id: int):
+    """Return (course, week) only if week belongs to student's enrolled course."""
+    course = student_course(g.user["id"])
+    week = query_one(
+        """
+        SELECT w.*, c.title AS course_title, c.id AS course_id
+        FROM weeks w
+        JOIN courses c ON c.id = w.course_id
+        WHERE w.id = ? AND w.is_published = 1 AND c.is_active = 1
+        """,
+        (week_id,),
+    )
+    if not course or not week or week["course_id"] != course["id"]:
+        abort(404)
+    return course, week
+
+
+def assert_staff_course(course_id: int):
+    """Teacher must be assigned; admin always allowed."""
+    course = query_one("SELECT * FROM courses WHERE id = ?", (course_id,))
+    if not course:
+        abort(404)
+    if g.user["role"] == "admin":
+        return course
+    if g.user["role"] != "teacher" or not teacher_teaches_course(
+        g.user["id"], course_id
+    ):
+        abort(403)
+    return course
+
+
+def assert_staff_week(week_id: int):
+    week = query_one(
+        """
+        SELECT w.*, c.title AS course_title, c.id AS course_id
+        FROM weeks w JOIN courses c ON c.id = w.course_id
+        WHERE w.id = ?
+        """,
+        (week_id,),
+    )
+    if not week:
+        abort(404)
+    assert_staff_course(week["course_id"])
+    return week
 
 
 def week_progress(student_id: int, course_id: int):
@@ -274,8 +370,10 @@ def register_routes(app: Flask):
     def student_home():
         course = student_course(g.user["id"])
         if not course:
-            flash("You are not enrolled in a course. Contact admin.", "warn")
-            return render_template("student/home.html", course=None, weeks=[], done_ids=set())
+            flash("You are not enrolled in an active course. Contact admin.", "warn")
+            return render_template(
+                "student/home.html", course=None, weeks=[], done_ids=set()
+            )
         weeks, done_ids = week_progress(g.user["id"], course["id"])
         complete = course_complete(g.user["id"], course["id"])
         return render_template(
@@ -289,17 +387,7 @@ def register_routes(app: Flask):
     @app.route("/student/week/<int:week_id>")
     @role_required("student")
     def student_week(week_id):
-        course = student_course(g.user["id"])
-        week = query_one(
-            """
-            SELECT w.*, c.title AS course_title FROM weeks w
-            JOIN courses c ON c.id = w.course_id
-            WHERE w.id = ? AND w.is_published = 1
-            """,
-            (week_id,),
-        )
-        if not week or not course or week["course_id"] != course["id"]:
-            abort(404)
+        course, week = assert_student_week(week_id)
         note = query_one(
             "SELECT * FROM notes WHERE week_id = ? ORDER BY updated_at DESC LIMIT 1",
             (week_id,),
@@ -319,10 +407,7 @@ def register_routes(app: Flask):
     @app.route("/student/week/<int:week_id>/test", methods=["GET", "POST"])
     @role_required("student")
     def student_test(week_id):
-        course = student_course(g.user["id"])
-        week = query_one("SELECT * FROM weeks WHERE id = ? AND is_published = 1", (week_id,))
-        if not week or not course or week["course_id"] != course["id"]:
-            abort(404)
+        course, week = assert_student_week(week_id)
 
         existing = query_one(
             "SELECT * FROM assessments WHERE student_id = ? AND week_id = ?",
@@ -337,6 +422,9 @@ def register_routes(app: Flask):
             (week_id,),
         )
         if request.method == "POST":
+            # Re-check enrolment before accepting answers
+            if not student_enrolled_in_course(g.user["id"], course["id"]):
+                abort(403)
             if not questions:
                 flash("No questions yet for this week.", "warn")
                 return redirect(url_for("student_week", week_id=week_id))
@@ -433,12 +521,12 @@ def register_routes(app: Flask):
     @app.route("/student/week/<int:week_id>/result")
     @role_required("student")
     def student_result(week_id):
+        course, week = assert_student_week(week_id)
         assessment = query_one(
             "SELECT * FROM assessments WHERE student_id = ? AND week_id = ?",
             (g.user["id"], week_id),
         )
-        week = query_one("SELECT * FROM weeks WHERE id = ?", (week_id,))
-        if not assessment or not week:
+        if not assessment:
             abort(404)
         answers = query_all(
             """
@@ -452,6 +540,7 @@ def register_routes(app: Flask):
         return render_template(
             "student/result.html",
             week=week,
+            course=course,
             assessment=assessment,
             answers=answers,
         )
@@ -474,14 +563,16 @@ def register_routes(app: Flask):
     @role_required("teacher", "admin")
     def teacher_home():
         if g.user["role"] == "admin":
-            courses = query_all("SELECT * FROM courses ORDER BY level, title")
+            courses = query_all(
+                "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
+            )
         else:
             courses = query_all(
                 """
                 SELECT c.* FROM courses c
                 JOIN teacher_courses tc ON tc.course_id = c.id
-                WHERE tc.teacher_id = ?
-                ORDER BY c.level, c.title
+                WHERE tc.teacher_id = ? AND c.is_active = 1
+                ORDER BY c.title
                 """,
                 (g.user["id"],),
             )
@@ -490,16 +581,7 @@ def register_routes(app: Flask):
     @app.route("/teacher/course/<int:course_id>")
     @role_required("teacher", "admin")
     def teacher_course(course_id):
-        course = query_one("SELECT * FROM courses WHERE id = ?", (course_id,))
-        if not course:
-            abort(404)
-        if g.user["role"] == "teacher":
-            ok = query_one(
-                "SELECT 1 FROM teacher_courses WHERE teacher_id = ? AND course_id = ?",
-                (g.user["id"], course_id),
-            )
-            if not ok:
-                abort(403)
+        course = assert_staff_course(course_id)
         weeks = query_all(
             "SELECT * FROM weeks WHERE course_id = ? ORDER BY week_number",
             (course_id,),
@@ -509,22 +591,14 @@ def register_routes(app: Flask):
     @app.route("/teacher/week/<int:week_id>", methods=["GET", "POST"])
     @role_required("teacher", "admin")
     def teacher_week(week_id):
-        week = query_one(
-            """
-            SELECT w.*, c.title AS course_title, c.id AS course_id
-            FROM weeks w JOIN courses c ON c.id = w.course_id
-            WHERE w.id = ?
-            """,
-            (week_id,),
-        )
-        if not week:
-            abort(404)
+        week = assert_staff_week(week_id)
         note = query_one(
             "SELECT * FROM notes WHERE week_id = ? ORDER BY updated_at DESC LIMIT 1",
             (week_id,),
         )
 
         if request.method == "POST":
+            # Access already verified via assert_staff_week
             action = request.form.get("action")
             if action == "save_note":
                 title = (request.form.get("title") or "").strip() or "Lesson notes"
@@ -617,7 +691,7 @@ def register_routes(app: Flask):
                 JOIN weeks w ON w.id = a.week_id
                 JOIN courses c ON c.id = w.course_id
                 ORDER BY a.submitted_at DESC
-                LIMIT 100
+                LIMIT 200
                 """
             )
         else:
@@ -631,7 +705,7 @@ def register_routes(app: Flask):
                 JOIN teacher_courses tc ON tc.course_id = c.id
                 WHERE tc.teacher_id = ?
                 ORDER BY a.submitted_at DESC
-                LIMIT 100
+                LIMIT 200
                 """,
                 (g.user["id"],),
             )
@@ -642,7 +716,8 @@ def register_routes(app: Flask):
     def teacher_assessment(assessment_id):
         assessment = query_one(
             """
-            SELECT a.*, u.full_name, w.week_number, w.title AS week_title, c.title AS course_title
+            SELECT a.*, u.full_name, w.week_number, w.title AS week_title,
+                   c.title AS course_title, c.id AS course_id
             FROM assessments a
             JOIN users u ON u.id = a.student_id
             JOIN weeks w ON w.id = a.week_id
@@ -653,11 +728,20 @@ def register_routes(app: Flask):
         )
         if not assessment:
             abort(404)
+        # Teacher only for assigned courses; admin unrestricted
+        assert_staff_course(assessment["course_id"])
 
         if request.method == "POST":
             for key, val in request.form.items():
                 if key.startswith("points_"):
                     aid = int(key.split("_", 1)[1])
+                    # Only update answers that belong to this assessment
+                    owns = query_one(
+                        "SELECT id FROM answers WHERE id = ? AND assessment_id = ?",
+                        (aid, assessment_id),
+                    )
+                    if not owns:
+                        continue
                     try:
                         pts = float(val)
                     except ValueError:
@@ -753,7 +837,52 @@ def register_routes(app: Flask):
                                 "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
                                 (tid, cid),
                             )
-                        flash("Teacher created.", "ok")
+                        flash("Teacher created with assigned courses.", "ok")
+            elif action == "assign_courses":
+                tid = request.form.get("teacher_id")
+                teacher = query_one(
+                    "SELECT id FROM users WHERE id = ? AND role = 'teacher'", (tid,)
+                )
+                if teacher:
+                    course_ids = request.form.getlist("course_ids")
+                    execute(
+                        "DELETE FROM teacher_courses WHERE teacher_id = ?",
+                        (teacher["id"],),
+                    )
+                    for cid in course_ids:
+                        c = query_one("SELECT id FROM courses WHERE id = ?", (cid,))
+                        if c:
+                            execute(
+                                "INSERT INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
+                                (teacher["id"], c["id"]),
+                            )
+                    flash("Teacher course assignments updated.", "ok")
+            elif action == "change_student_course":
+                sid = request.form.get("student_id")
+                course_id = request.form.get("course_id")
+                student = query_one(
+                    "SELECT id FROM users WHERE id = ? AND role = 'student'", (sid,)
+                )
+                course = query_one(
+                    "SELECT id, title FROM courses WHERE id = ? AND is_active = 1",
+                    (course_id,),
+                )
+                if student and course:
+                    existing = query_one(
+                        "SELECT id FROM enrollments WHERE user_id = ?",
+                        (student["id"],),
+                    )
+                    if existing:
+                        execute(
+                            "UPDATE enrollments SET course_id = ?, enrolled_at = ? WHERE id = ?",
+                            (course["id"], now_iso(), existing["id"]),
+                        )
+                    else:
+                        execute(
+                            "INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (?,?,?)",
+                            (student["id"], course["id"], now_iso()),
+                        )
+                    flash(f"Student moved to {course['title']}.", "ok")
             elif action == "toggle":
                 uid = request.form.get("user_id")
                 if str(uid) != str(g.user["id"]):
@@ -775,8 +904,26 @@ def register_routes(app: Flask):
             ORDER BY u.role, u.full_name
             """
         )
-        courses = query_all("SELECT * FROM courses ORDER BY title")
-        return render_template("admin/users.html", users=users, courses=courses)
+        courses = query_all(
+            "SELECT * FROM courses WHERE is_active = 1 ORDER BY title"
+        )
+        teachers = [u for u in users if u["role"] == "teacher"]
+        teacher_assign = {}
+        for t in teachers:
+            rows = query_all(
+                "SELECT course_id FROM teacher_courses WHERE teacher_id = ?",
+                (t["id"],),
+            )
+            teacher_assign[t["id"]] = {r["course_id"] for r in rows}
+        students = [u for u in users if u["role"] == "student"]
+        return render_template(
+            "admin/users.html",
+            users=users,
+            courses=courses,
+            teachers=teachers,
+            teacher_assign=teacher_assign,
+            students=students,
+        )
 
     @app.route("/admin/assessments")
     @role_required("admin")

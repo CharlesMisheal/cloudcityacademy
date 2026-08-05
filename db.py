@@ -424,10 +424,6 @@ def ensure_course_catalog(teacher_id):
                     ),
                 )
 
-        execute(
-            "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
-            (teacher_id, course_id),
-        )
         week_count = query_one(
             "SELECT COUNT(*) AS c FROM weeks WHERE course_id = ?", (course_id,)
         )["c"]
@@ -444,6 +440,20 @@ def ensure_course_catalog(teacher_id):
                 )
 
         _seed_week_one_content(slug, title, teacher_id, now)
+
+    # Demo teacher only: if they have no assignments yet, give two sample courses.
+    # Admin controls all further teacher → course assignments.
+    has_any = query_one(
+        "SELECT 1 FROM teacher_courses WHERE teacher_id = ? LIMIT 1", (teacher_id,)
+    )
+    if not has_any:
+        for slug in ("office-ms-word", "graphic-coreldraw"):
+            c = query_one("SELECT id FROM courses WHERE slug = ? AND is_active = 1", (slug,))
+            if c:
+                execute(
+                    "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?,?)",
+                    (teacher_id, c["id"]),
+                )
 
 
 def seed_if_empty():
