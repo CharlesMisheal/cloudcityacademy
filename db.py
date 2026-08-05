@@ -359,6 +359,50 @@ def _migrate_schema(db):
            ON users(student_code) WHERE student_code IS NOT NULL AND student_code != ''"""
     )
     db.commit()
+    _migrate_courses_level_constraint(db)
+
+
+def _migrate_courses_level_constraint(db):
+    """
+    Older DBs used: level CHECK(level IN ('beginner', 'advanced')).
+    Catalog now stores category tags (office, python, ai, …).
+    SQLite cannot ALTER CHECK — rebuild the courses table without the constraint.
+    """
+    row = db.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'courses'"
+    ).fetchone()
+    if not row or not row[0]:
+        return
+    ddl = row[0]
+    # Already free of the old two-level check
+    if "beginner" not in ddl and "advanced" not in ddl:
+        return
+    if "CHECK" not in ddl.upper():
+        return
+
+    db.execute("PRAGMA foreign_keys = OFF")
+    try:
+        db.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS courses_mig (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT NOT NULL UNIQUE,
+                title TEXT NOT NULL,
+                level TEXT NOT NULL,
+                description TEXT NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1
+            );
+            DELETE FROM courses_mig;
+            INSERT INTO courses_mig (id, slug, title, level, description, is_active)
+            SELECT id, slug, title, level, description, is_active FROM courses;
+            DROP TABLE courses;
+            ALTER TABLE courses_mig RENAME TO courses;
+            """
+        )
+        db.commit()
+    finally:
+        db.execute("PRAGMA foreign_keys = ON")
+        db.commit()
 
 
 def normalize_student_code(raw: str) -> str:
