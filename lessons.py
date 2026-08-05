@@ -12,7 +12,7 @@ from typing import Any
 from curriculum import TOPICS, weeks_for
 from real_content import week_content
 
-MARKER = "[[CCA_CURRICULUM_V4]]"
+MARKER = "[[CCA_CURRICULUM_V5]]"
 
 
 def _mcq(prompt: str, options: list[str], correct: str, points: int = 2, order: int = 1):

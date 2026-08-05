@@ -2072,37 +2072,260 @@ def _system(week: int, topic: str) -> dict:
 
 
 def _ai_eng(week: int, topic: str) -> dict:
+    """Handcrafted week-by-week. Week 1 fully written; later weeks filled one at a time."""
     t, d = _split_topic(topic)
+
+    # ── Week 1: What is AI? (full substance) ─────────────────
+    if week == 1:
+        return _pack(
+            "What is AI?",
+            "Artificial Intelligence (AI) is the field of building computer systems that perform tasks "
+            "people usually associate with human intelligence — recognising patterns, making predictions, "
+            "understanding language, planning, or controlling devices — by using data, rules, or learned models. "
+            "Almost all practical systems today are narrow AI (good at one job), not human-level general minds.",
+            [
+                (
+                    "A clear definition (without science-fiction)",
+                    """What AI means in this course
+
+Artificial Intelligence is a branch of computer science and engineering. Its goal is to create machines
+and programs that can do useful “intelligent” work: classify images, recommend a playlist, translate a
+sentence, detect fraud, complete text, drive a robot arm, or answer a question from a document.
+
+Important: AI is not “a robot with feelings.” It is also not magic. It is software (and sometimes hardware)
+that produces an output from an input using either:
+  (1) hand-written rules (classical / symbolic approaches), or
+  (2) statistical models that were trained on examples (machine learning), or
+  (3) a mix of both.
+
+A useful working definition for engineers:
+  AI system = inputs → model or decision procedure → outputs, plus a way to judge whether the output is good enough.
+
+What “intelligence” means here
+- Perception: sensing the world (pixels, sound, sensor readings).
+- Reasoning / prediction: choosing labels, scores, next actions, or text.
+- Adaptation (often): improving when given more data (learning).
+
+What AI is NOT (common hype)
+- Not automatically conscious or self-aware.
+- Not always correct — models make mistakes and can be confident when wrong.
+- Not the same as the movie idea of a machine that can do every human job (that idea is called AGI —
+  Artificial General Intelligence — and it is not what your phone’s map app is).
+- Not identical to “automation.” A thermostat that turns heat on at 18°C is simple automation / control,
+  not modern AI — unless it uses learned models of usage or weather.
+
+A short history in four beats (enough to orient you)
+- 1950s: Turing and early ideas of machine thinking; the term “Artificial Intelligence” appears (1956 Dartmouth).
+- Rules era: expert systems with if–then knowledge hand-coded by experts (strong in narrow domains, brittle).
+- Statistical / ML era: systems learn patterns from large datasets (spam filters, ranking, vision).
+- Deep learning + generative era: neural networks with many layers handle images, speech, and large language
+  models (LLMs) that generate text, code, and images from prompts.
+
+Narrow AI vs general AI
+- Narrow (or weak) AI: one task or family of tasks (face unlock, spam filter, chat assistant). This is what
+  industry deploys today.
+- General (strong) AI / AGI: human-like flexibility across almost any cognitive task — research debate, not
+  your capstone scope.
+
+In class phrase to remember:
+  “AI is engineered capability under uncertainty, not a person in a computer.”""",
+                ),
+                (
+                    "AI vs classical software vs machine learning",
+                    """Three ways to get answers from computers
+
+1) Classical (deterministic) software
+   Example: if mark >= 50: print("Pass") else: print("Fail")
+   - Behaviour is fully specified by code you typed.
+   - Same input → same output (ignoring bugs and clocks).
+   - You can usually “prove” what happens by reading the rules.
+   - Fails when the world is messy: what is a “cat” in a million photos cannot be listed as hand rules easily.
+
+2) Machine Learning (a major route to AI)
+   You do not list every rule. You show many examples (data) and train a model that maps inputs → outputs.
+   Example: show 10,000 emails labelled spam/not-spam; the model learns features of spam.
+   - Same input usually → same output for a fixed trained model, but the mapping was learned, not hand-written.
+   - Errors are statistical: some spam slips through; some good mail is blocked.
+   - Needs data, evaluation metrics, and monitoring when the world changes (data drift).
+
+3) Hybrid systems (very common in products)
+   Rules + ML together: e.g. a bank uses a model score + hard rules (“block if country is sanctioned”).
+   Generative AI + tools: an LLM drafts text, then a policy filter blocks unsafe output.
+
+Where people use the word “AI” in products (everyday map)
+| Product idea              | Input              | Intelligent step              | Output            |
+|---------------------------|--------------------|--------------------------------|-------------------|
+| Photo face unlock         | Camera image       | Face match model               | Unlock / deny     |
+| Map ETA                   | GPS, traffic data  | Prediction model / heuristics  | Minutes to arrival|
+| Spam filter               | Email text         | Classifier                     | Spam / inbox      |
+| Chat assistant            | Prompt + context   | Language model                 | Text answer       |
+| Product recommendation    | Past clicks        | Ranking model                  | List of items     |
+
+Classifying a system correctly this week
+Ask:
+  A) What is the input?
+  B) What decision or generation is made?
+  C) Were rules hand-written, or was a model trained on data, or both?
+  D) How would you know if it is wrong?
+If you cannot answer A–D, you do not yet understand that system — even if the brochure says “AI-powered.”
+
+AI Engineer (this course role)
+An AI engineer designs, builds, evaluates, and ships systems that use these methods safely:
+data → model/tooling → product behaviour → metrics → human oversight.
+You will spend later weeks on prompts, data pipelines, APIs, evaluation, and responsibility — all still
+grounded in: know what the system actually does.""",
+                ),
+                (
+                    "Capabilities, limits, and how we will talk about AI in this course",
+                    """What current AI systems can do well (typical)
+- Pattern recognition: images, audio, language patterns in large data.
+- Ranking and recommendation when history exists.
+- Speeding up drafting (text, code sketches, layouts) with a human editor.
+- Narrow prediction when the future looks like the past data.
+
+What they do poorly or riskily
+- Facts they were not grounded on (hallucination in generative models: fluent, wrong answers).
+- Tasks needing accountability (medical, legal, exam grading) without human review and careful design.
+- Situations far outside the training data (odd accents, rare diseases, new slang, local school rules).
+- True understanding of meaning the way a careful teacher understands a student — systems optimise objectives,
+  they do not “care.”
+
+Anthropomorphism trap
+Saying “the AI thinks / wants / lies” is casual talk. Engineers prefer:
+  “The model assigned probability…”, “The system sampled a token…”, “The classifier scored 0.92 spam.”
+This week: ban empty claims like “AI will replace everything.” Prefer precise ones:
+  “A classifier can label SMS as promo with X% accuracy on our test set.”
+
+Safety and responsibility (first contact — deeper weeks later)
+Even a class demo can:
+- Leak private data if you paste secrets into a public tool.
+- Amplify bias if training data was skewed (e.g. always scoring one group worse).
+- Be misused for cheating or harassment.
+Rule for this academy: school-safe data only; no real phone numbers/passwords in tools; human checks
+important decisions; document limits.
+
+What you will produce as evidence this week
+Not a neural net from scratch. A clear reasoning artefact:
+- Definitions in your own words (accurate, not vague).
+- Classification of real systems as rule / ML / hybrid / not-AI automation.
+- One system sketched as input → process → output → how you spot errors.""",
+                ),
+            ],
+            """WORKED EXAMPLE — Is this AI?
+
+System A: School fee portal
+  if amount_paid >= fee_due: status = "Cleared"
+  else: status = "Balance due"
+→ Classical rules. Useful automation. Not ML. People may still loosely call it “the system,” but not AI.
+
+System B: Email spam folder
+  Model trained on labelled mail; new mail → spam score → folder.
+→ Machine learning (narrow AI application). Can be wrong both ways.
+
+System C: “If temperature < 18°C, turn heater on”
+→ Control rule / automation, not modern AI.
+
+System D: Chatbot that drafts a reply from a large language model, then a policy filter blocks hate speech
+→ Hybrid generative AI + rules.
+
+Template for every system you study:
+  Name:
+  Input(s):
+  Output(s):
+  Method: rules / ML / hybrid / unclear
+  How it can fail:
+  Human needed for:""",
+            [
+                "In your notebook (or a .txt/.md file), write a definition of AI in ≤80 words that a junior secondary student could understand — must include: tasks people associate with intelligence, and that systems use rules and/or learned models.",
+                "Build a table of 6 real systems you use or know (WhatsApp spam?, Google Maps ETA, calculator app, exam grading spreadsheet with =IF, face unlock, chat AI). For each: input, output, rules vs ML vs hybrid vs not-AI, one failure mode.",
+                "Pick ONE system from your table. Draw or write the pipeline: Input → Process → Output → Check (how a human notices an error).",
+                "Write 5 honest sentences: two things AI systems do well, two limits, one safety rule you will follow in this course when using online AI tools.",
+            ],
+            [
+                ("Artificial Intelligence (AI)", "Engineering field: systems that perform perception, prediction, language, or control-like tasks using rules and/or models from data"),
+                ("Narrow AI", "System good at a limited task domain (today’s practical AI)"),
+                ("AGI", "Hypothetical AI with broad human-like flexibility — not product reality for this course"),
+                ("Machine learning (ML)", "Building models from examples/data rather than writing every rule"),
+                ("Model", "The learned or configured procedure that maps inputs to outputs"),
+                ("Deterministic software", "Behaviour fully fixed by explicit code/rules; same input → same logic path"),
+                ("Automation", "Making a process run without manual steps — may or may not use AI"),
+                ("Hallucination (preview)", "When a generative model produces fluent but false content"),
+            ],
+            [
+                "Define AI accurately without sci-fi claims",
+                "Tell classical rules, ML, hybrid, and plain automation apart with examples",
+                "Describe one system as input → process → output → failure check",
+            ],
+            [
+                (
+                    "Which best matches Artificial Intelligence as used in this course?",
+                    [
+                        "Any app with a colourful logo",
+                        "Systems that perform tasks like recognition, prediction, or language using rules and/or learned models",
+                        "Only humanoid robots with emotions",
+                        "Any Excel formula at all",
+                    ],
+                    "Systems that perform tasks like recognition, prediction, or language using rules and/or learned models",
+                ),
+                (
+                    "A program that only does: if score >= 50 print Pass else Fail is best described as:",
+                    [
+                        "A trained neural network",
+                        "Classical rule-based software (not ML by itself)",
+                        "AGI",
+                        "Unsupervised clustering",
+                    ],
+                    "Classical rule-based software (not ML by itself)",
+                ),
+                (
+                    "Narrow AI means:",
+                    [
+                        "AI that only works at night",
+                        "Systems designed for limited task domains (what we deploy today)",
+                        "AI that replaces all jobs this week",
+                        "Hardware without software",
+                    ],
+                    "Systems designed for limited task domains (what we deploy today)",
+                ),
+            ],
+            "In 10–14 sentences: (1) define AI, (2) explain narrow vs general AI, (3) give one rule-based and one ML example, "
+            "(4) name one limit of current AI, (5) state one safety habit for using AI tools in school.",
+            "Screenshot or photo of your 6-row classification table AND the pipeline sketch for one system "
+            "(hand-drawn is fine if readable).",
+        )
+
+    # Later weeks: temporary placeholder until we handcraft each (bit by bit)
     return _pack(
         t,
-        f"Applied AI engineering concept: {d}.",
+        f"AI Engineer — week {week} topic: {d}. Full lecture notes for this week are being written next; "
+        f"Week 1 (What is AI?) is the model for depth.",
         _lectures_triple(
-            f"Concept — {t}",
-            f"{d}. Treat AI as a system component with inputs, model/tooling, outputs, and evaluation — not magic. "
-            "Distinguish classical software (deterministic rules) from statistical models (probabilistic errors). "
-            "Key terms this week must be defined with an example from school or business life.",
-            f"Technique — {t}",
-            "Operationalise the idea: write a procedure or prompt/template/API sketch with concrete fields. "
-            "Metrics: accuracy/precision/recall when labels exist; otherwise rubrics (helpfulness, groundedness). "
-            "Failure modes: hallucination, bias, prompt injection awareness, data leakage. "
-            "Human-in-the-loop checkpoints.",
-            f"Build/plan — {t}",
-            "Mini-experiment or design card: goal, data/examples, method, metric, safety rule, expected artefacts. "
-            "If API practice is available, log requests/responses; if not, fully specify mock I/O. "
-            "Document limitations honestly.",
+            f"Topic preview — {t}",
+            f"This week’s subject is: {d}.\n\n"
+            "Until the dedicated notes for this week are published, use primary study from your teacher’s class "
+            "and standard references they assign. Do not treat this placeholder as complete theory.",
+            f"What you should still practice — {t}",
+            f"Write input → process → output for a tiny example of “{t}”. List two failure modes and one metric "
+            "you would use to judge quality. Bring questions to class.",
+            f"Lab focus — {t}",
+            f"Produce a one-page design note for “{detail}” with: goal, example inputs, expected outputs, metric, safety note.",
         ),
-        f"EXPERIMENT CARD\nGoal:\nInput examples:\nMethod ({t}):\nMetric:\nSafety:\nResult:",
+        f"DESIGN NOTE — {t}\nGoal:\nExample inputs:\nProcess idea:\nOutputs:\nMetric:\nSafety:\nOpen questions:",
         [
-            f"Complete experiment/design card for: {t}",
-            "Define success metric + one safety rule",
-            "Produce sample I/O (real or mock) showing good and bad cases",
-            "Write limits/ethics note (5–8 sentences across week if capstone)",
+            f"One-page design note for: {t}",
+            "Two failure modes listed",
+            "One quality metric named",
+            "Safety constraint written",
         ],
-        [("model", "Learned or hosted predictor/generator"), ("prompt", "Instructions to a generative model"), ("evaluation", "Measuring quality"), ("hallucination", "Fluent but false output"), ("RAG", "Retrieve then generate from documents")],
-        [f"Define {t} precisely", "Run/plan a mini evaluation", "State safety constraint"],
+        [
+            (t if len(t) < 40 else "Week topic", d[:100]),
+            ("metric", "How you measure quality"),
+            ("failure mode", "How the system goes wrong"),
+        ],
+        [f"Outline {t}", "Name metric and failures", "Write safety constraint"],
         _mcq_topic(t, d),
-        f"Explain “{t}” with pipeline language (input → process → output → metrics).",
-        f"Screenshot of experiment card / prompts / mock I/O for week {week}.",
+        f"Summarise what you know so far about “{t}” and what you still need explained in class.",
+        f"Screenshot of your design note for week {week}.",
     )
 
 
